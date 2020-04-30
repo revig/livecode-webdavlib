@@ -447,9 +447,9 @@ end _wdlRequestResponse
 --| COMMAND _wdlWriteLog
 --|
 --| Author: rabit
---| Version:  1.1
+--| Version:  1.2
 --| Created: 2008-06-09
---| Last Mod: 2020-03-26
+--| Last Mod: 2020-04-30
 --| Requires: --
 --|
 --| Summary: Write to log field in stack sLogTarget
@@ -463,13 +463,13 @@ end _wdlRequestResponse
 ----------------------------------------------------------------------*/
 
 command _wdlWriteLog pReqID pResponse
-   local tRexEx, tSocketToOpen, tCurrentRequest
+   local tRegEx, tSocketToOpen, tCurrentRequest
 
    if sLogTargetExists then
       if sWebDavPoolA[pReqID]["socketToOpen"] is empty then
-         put "^" & sWebDavPoolA[pReqID]["host"] into tRexEx
+         put "^" & sWebDavPoolA[pReqID]["host"] into tRegEx
          repeat for each line tSocket in the openSockets
-            if matchText(tSocket, tRexEx) then
+            if matchText(tSocket, tRegEx) then
                put tSocket into sWebDavPoolA[pReqID]["socketToOpen"]
                exit repeat
             end if
