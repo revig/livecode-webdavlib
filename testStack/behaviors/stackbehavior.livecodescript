@@ -249,6 +249,8 @@ end checkLocked
 command downloadFile
    local tFile, tDownloadFile = ""
 
+   put empty into msg
+
    put fld "downloadPathFld" into tDestPath
    if tDestPath is empty then
       answer error "No download folder specified!"
@@ -257,33 +259,23 @@ command downloadFile
 
 
    if the optionkey is not down then
-      put true into tDownloadFile
+      put TRUE into tDownloadFile
    end if
 
    put fld "davDirFld" & fld "remoteFileFld" into tFile
 
-   getFile tFile, tDownloadFile
-end downloadFile
-
-
-
-command getFile pFile pDownloadFile
-   local tHeader, tCallBack, tCallbackTarget, tRequestDataA, tReqID, tServerResponse
-   local tFileName, tDestPath
-
    put empty into sCurrentFileSize
 
-   ## GET SIZE OF FILE TO DOWNLOAD
-   put "Content-Length" into tHeader
-   put getFileHeader (pFile, tHeader) into sCurrentFileSize
+   fileSize
+   put the result into sCurrentFileSize
 
-   if pDownloadFile is "true" then
+   if sCurrentFileSize is an integer and (tDownloadFile is TRUE) then
+      prepareLogFields
 
       put TRUE into tCallback
       put commonSettings(tCallback) into tRequestDataA
 
-      put "GET" into tRequestDataA["method"]
-      put pFile into tRequestDataA["uri"]
+      put tFile into tRequestDataA["uri"]
 
       wdlSetupNewRequest tRequestDataA
       put the result into tReqID
@@ -292,25 +284,24 @@ command getFile pFile pDownloadFile
       # AND load COMMANDS, AS WELL AS DOWNLOADS TRIGGERED BY EVALUATING AN FTP OR HTTP URL
       prepareProgress
 
-      ## REQUEST
-      put wdlExecute(tReqID) into tServerResponse
+      # REQUEST
+      put wdlGetFile(tReqID) into tData
 
-      wdlCleanup tReqID
-
-      ## RESPONSE
-      if tServerResponse contains "Error" then
-         put cr & cr & tServerResponse after fld "errorFld"
+      if tData contains "Error" then
+         put cr & cr & tData after fld "errorFld"
       else
          ## SUCCESS, SAVE FILE
          set the itemdelimiter to "/"
-         put last item of pFile into tFileName
+         put last item of tFile into tFileName
 
          put fld "downloadPathFld" & "/" & tFileName into tDestPath
 
-         put tServerResponse into URL ("binfile:" & tDestPath)
-      end if
-   end if -- IF PDOWNLOADFILE IS "TRUE" THEN
-end getFile
+         put tData into URL ("binfile:" & tDestPath)
+      end if -- if tData contains "Error"
+
+      wdlCleanup tReqID
+   end if -- if sCurrentFileSize is an integer and (tDownloadFile is TRUE)
+end downloadFile
 
 ----------------------------------
 

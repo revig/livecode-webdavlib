@@ -180,7 +180,7 @@ end wdlSet
 --| Version:  1.0
 --| Created: 2020-05-04
 --| Last Mod: 2020-05-04
---| Requires: --
+--| Requires: wdlExecute()
 --|
 --| Summary: Get comma delimited list of server methods.
 --|
@@ -213,9 +213,9 @@ end wdlGetserverMethods
 --| Version:  1.0
 --| Created: 2020-05-04
 --| Last Mod: 2020-05-04
---| Requires: Get array of file properties.
+--| Requires: wdlPropertyNamesXMLdata(), wdlExecute()
 --|
---| Summary: description
+--| Summary: Get array of file properties.
 --|
 --| Format:  wdlGetFileProps(param1, param2)
 --|
@@ -244,6 +244,41 @@ function wdlGetFileProps pReqID pProps
 
    return tFilePropsA
 end wdlGetFileProps
+
+
+
+
+
+/*----------------------------------------------------------------------
+--| FUNCTION wdlGetFile
+--|
+--| Author: rabit
+--| Version:  1.0
+--| Created: 2020-05-04
+--| Last Mod: 2020-05-04
+--| Requires: wdlExecute()
+--|
+--| Summary: Download file.
+--|
+--| Format:  wdlGetFile(param)
+--|
+--| Parameters: integer <pReqID>
+--|
+--| Return: mixed
+----------------------------------------------------------------------*/
+
+function wdlGetFile pReqID
+   local tData
+
+   put "GET" into sWebDavPoolA[pReqID]["method"]
+   put "wdlGetFile" into sWebDavPoolA[pReqID]["requestHandler"]
+
+   # REQUEST
+   put wdlExecute(pReqID) into tData
+
+   return tData
+end wdlGetFile
+
 
 
 
