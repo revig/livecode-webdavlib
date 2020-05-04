@@ -42,77 +42,46 @@ end options
 ----------------------------------
 
 command fileSize
-   local tFile, tProps, tNameSpace, tFilePropValues
+   local tFile, tProps, tNameSpace, tCallback
+   local tRequestDataA, tReqID, tFilePropValuesA
+
+   libUrlSetStatusCallback
 
    put fld "davDirFld" & fld "remoteFileFld" into tFile
 
    # GET PROPERTY
    # LEAVE EMPTY TO GET ALL PROPERTIES
-   -- put "creationdate" into tProps
    put "getcontentlength" into tProps
-   -- put "creationdate,getcontentlength" into tProps
+   -- put "creationdate" into tProps
+   -- put "getcontentlength,getlastmodified" into tProps
 
    # CUSTOM PROPERTIES
    # USE tNameSpace FOR CUSTOM PROPERTIES ONLY!!!!!
-   -- put quote & the cNameSpace of this stack & quote into tNameSpace
+   -- put quote & fld "namespaceFld" & quote into tNameSpace
    -- put "authors,testTag" into tProps
    # USE propname TO RETREIVE ALL PROPERTY NAMES
    -- put "propname" into tProps
-
-   put getFileProps(tFile, tNameSpace, tProps) into tFilePropValues
-
-   --   put offset("<?xml", tFilePropValues) into tFilePropXMLStart
-   --   put char tFilePropXMLStart to -1 of tFilePropValues into tFilePropXML
-   --   put ConvertXMLToArray(tFilePropXML, , TRUE) into tFilePropValuesA
-   --   put tFilePropValuesA["multistatus"]["response"]["propstat"]["prop"]["getcontentlength"]["@value"]
-   --   -- put printArray("theArray", tFilePropValuesA)
-
-
-   -- put "Author,testTag" into tProps
-   -- put "creationdate,getcontentlength" into tProps
-   -- put "getcontentlength" into tProps
-
-   repeat for each item thisItem in tProps
-      put wdlPropertyVals(thisItem, tFilePropValues) after tTheResult
-   end repeat
-
-   delete char -1 of tTheResult
-   put tTheResult -- & return & return & tFilePropValues
-end fileSize
-
-
-
-
-function getFileProps pFile, pNameSpace, pProps
-   local tCustomProps, tPropsXML, tContType, tRequestDataA, tReqID
 
    prepareLogFields
 
    put FALSE into tCallback
    put commonSettings(tCallback) into tRequestDataA
-
-   put "PROPFIND" into tRequestDataA["method"]
-   put pFile into tRequestDataA["uri"]
-   if pNameSpace is not empty then -- CUSTOM PROPERTIES
-      put TRUE into tCustomProps
-   end if
-   put wdlPropertyNamesXMLdata(pProps, tCustomProps) into tPropsXML
-
-   put tPropsXML into tRequestDataA["propertiesXML"]
-   put "application/xml; charset=" & quote & "utf-8" & quote into tContType
-   put tContType into tRequestDataA["contentType"]
-   put pNameSpace into tRequestDataA["nameSpace"]
+   put tFile into tRequestDataA["uri"]
 
    wdlSetupNewRequest tRequestDataA
    put the result into tReqID
 
-   # REQUEST
-   get wdlExecute(tReqID)
+   put wdlGetFileProps(tReqID, tProps) into tFilePropValuesA
 
-   return it
+   put empty into msg
+   repeat for each key tKey in tFilePropValuesA
+      put tKey & ":" && tFilePropValuesA[tKey] & return after msg
+   end repeat
 
    wdlCleanup tReqID
-end getFileProps
+
+   return tFilePropValuesA["getcontentlength"]
+end fileSize
 
 
 

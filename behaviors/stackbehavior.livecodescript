@@ -206,6 +206,46 @@ end wdlGetserverMethods
 
 
 
+/*----------------------------------------------------------------------
+--| FUNCTION wdlGetFileProps
+--|
+--| Author: rabit
+--| Version:  1.0
+--| Created: 2020-05-04
+--| Last Mod: 2020-05-04
+--| Requires: Get array of file properties.
+--|
+--| Summary: description
+--|
+--| Format:  wdlGetFileProps(param1, param2)
+--|
+--| Parameters: integer <pReqID>, string <pProps>
+--|
+--| Return: mixed
+----------------------------------------------------------------------*/
+
+function wdlGetFileProps pReqID pProps
+   local tFileProps
+
+   put "PROPFIND" into sWebDavPoolA[pReqID]["method"]
+   put "wdlGetFileProps" into sWebDavPoolA[pReqID]["requestHandler"]
+   put pProps into sWebDavPoolA[pReqID]["props"]
+
+   # BUILD PROPERTY XML DATA
+   put FALSE into tCustomProps
+   put wdlPropertyNamesXMLdata(pProps, tCustomProps) into tPropsXML
+
+   put tPropsXML into sWebDavPoolA[pReqID]["propertiesXML"]
+   put "application/xml; charset=" & quote & "utf-8" & quote into tContType
+   put tContType into sWebDavPoolA[pReqID]["contentType"]
+
+   # REQUEST
+   put wdlExecute(pReqID) into tFilePropsA
+
+   return tFilePropsA
+end wdlGetFileProps
+
+
 
 
 /*----------------------------------------------------------------------
@@ -585,10 +625,10 @@ end _wdlSetErrorOrDoneStatus
 --| FUNCTION _wdlProcessResponse
 --|
 --| Author: rabit
---| Version:  1.3
+--| Version:  1.4
 --| Created: 2008-05-19
---| Last Mod: 2020-03-26
---| Requires: --
+--| Last Mod: 2020-05-04
+--| Requires: _wdlPropertyVals()
 --|
 --| Summary: Process data from server response.
 --|
@@ -643,7 +683,11 @@ private function _wdlProcessResponse pReqID, pServerResponse
 
          break
       case "PROPFIND"
-         put pServerResponse into tDataToReturn
+         if sWebDavPoolA[pReqID]["props"] <> empty then
+            put _wdlPropertyVals(sWebDavPoolA[pReqID]["props"], pServerResponse) into tDataToReturn
+         else
+            put pServerResponse into tDataToReturn
+         end if
 
          break
       case "PROPPATCH"
@@ -677,9 +721,9 @@ end _wdlProcessResponse
 --| FUNCTION wdlExecute
 --|
 --| Author: rabit
---| Version:  1.2
+--| Version:  1.3
 --| Created: 2008-05-19
---| Last Mod: 2020-03-04
+--| Last Mod: 2020-05-04
 --| Requires: _wdlCheckLogTarget, _wdlCustomHeaders(), _wdlWriteStatus
 --|          _wdlAuthBasicRequest(), _wdlRequestResponse(), _wdlProcessResponse(), _wdlWriteError
 --|
@@ -775,7 +819,6 @@ function wdlExecute pReqID
 
          wait 100 millisecs with messages
          _wdlWriteStatus pReqID, "done"
-         _wdlCleanUp pReqID
 
          # BAD REQUEST
          if "400" is in line 1 of sWebDavPoolA[pReqID]["HTTPresponse"] then
@@ -786,6 +829,13 @@ function wdlExecute pReqID
          end if
          #
 
+         if sWebDavPoolA[pReqID]["method"] is "PROPFIND" then
+            put _wdlProcessResponse(pReqID, sWebDavPoolA[pReqID]["HTTPresponse"]) into tRequestedDataA
+            _wdlCleanUp pReqID
+            return tRequestedDataA
+         end if
+
+         _wdlCleanUp pReqID
          return sWebDavPoolA[pReqID]["HTTPresponse"]
       end if
 
@@ -1024,6 +1074,13 @@ function wdlExecute pReqID
 
                wait 100 millisecs with messages
                _wdlWriteStatus pReqID, "done"
+
+               if sWebDavPoolA[pReqID]["method"] is "PROPFIND" then
+                  put _wdlProcessResponse(pReqID, sWebDavPoolA[pReqID]["HTTPresponse"]) into tRequestedDataA
+                  _wdlCleanUp pReqID
+                  return tRequestedDataA
+               end if
+
                _wdlCleanUp pReqID
 
                return sWebDavPoolA[pReqID]["HTTPresponse"]
@@ -1600,48 +1657,71 @@ end wdlPropertyNamesXMLdata
 
 
 /*----------------------------------------------------------------------
---| FUNCTION wdlPropertyVals
+--| FUNCTION _wdlPropertyVals
 --|
 --| Author: rabit
---| Version:  1.0
+--| Version:  1.1
 --| Created: 2020-02-26
---| Last Mod: --
+--| Last Mod: 2020-05-04
 --| Requires: --
 --|
 --| Summary: Get value(s) of a specific property in XML response data.
 --|
---| Format:  wdlPropertyVals(param1, param2)
+--| Format:  _wdlPropertyVals(param1, param2)
 --|
 --| Parameters: string <pProp>, string <pFilePropValues> (XML response)
 --|
 --| Return: string
 ----------------------------------------------------------------------*/
 
-function wdlPropertyVals pProp pFilePropValues
-   local tPropLineNum, tPropLine, tPropValue, tTheResult
+private function _wdlPropertyVals pProps pFilePropValues
+   local tPropLineNum, tFilePropValues, tProp, tPropLine
+   local tPropValue, tOpaqueTokenLineNum, tTokenLine
+   local tOpaqueToken, tTheResultA
 
-   put empty into tPropLineNum
+   repeat for each item tProp in pProps
+      put empty into tPropLineNum
+      put pFilePropValues into tFilePropValues
 
-   repeat until tPropLineNum is 0
-      put lineOffset(pProp & ">", pFilePropValues) into tPropLineNum
+      repeat until tPropLineNum is 0
+         put lineOffset(tProp & ">", tFilePropValues) into tPropLineNum
 
-      if tPropLineNum <> 0 then
-         put line tPropLineNum of pFilePropValues into tPropLine
-         get matchText(tPropLine, "(?U)<.*" & pProp & ".*>(.*)</" , tPropValue)
-         if it is true then
-            put pProp & ":" && tPropValue & return after tTheResult
+         if tPropLineNum <> 0 then
+            put line tPropLineNum of tFilePropValues into tPropLine
+
+            if tProp is "lockdiscovery" then
+               get matchText(tPropLine, "(?U)<.*lockdiscovery.*><.*:(.*)>" , tPropValue)
+            else
+               get matchText(tPropLine, "(?U)<.*" & tProp & ".*>(.*)</" , tPropValue)
+            end if -- if tProp is "lockdiscovery"
+
+            if it is true then
+               if tProp is "lockdiscovery" then
+                  # GET LOCK TOKEN
+                  put lineOffset(">opaquelocktoken:", tFilePropValues) into tOpaqueTokenLineNum
+                  put line tOpaqueTokenLineNum of tFilePropValues into tTokenLine
+                  get matchText(tTokenLine, "(?U).*>(opaquelocktoken:.*)<.*>" , tOpaqueToken)
+                  put tPropValue & return & "lock token:" && "<" & tOpaqueToken & ">" into tTheResultA[tProp]
+               else
+                  put tPropValue into tTheResultA[tProp]
+               end if
+            else
+               put "Property value not found!" into tTheResultA[tProp]
+            end if -- if it is true
          else
-            put pProp & ":" && "property value not found" & return after tTheResult
-         end if
-      else
-         return tTheResult
-      end if
+            exit repeat
+         end if -- if tPropLineNum <> 0
 
-      put line tPropLineNum + 1 to -1 of pFilePropValues into pFilePropValues
+         if tProp is "lockdiscovery" then
+            exit repeat
+         end if
+
+         put line tPropLineNum + 1 to -1 of tFilePropValues into tFilePropValues
+      end repeat
    end repeat
 
-   return tTheResult
-end wdlPropertyVals
+   return tTheResultA
+end _wdlPropertyVals
 
 
 
