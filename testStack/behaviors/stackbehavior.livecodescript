@@ -71,6 +71,7 @@ command fileSize
    wdlSetupNewRequest tRequestDataA
    put the result into tReqID
 
+   # REQUEST
    put wdlGetFileProps(tReqID, tProps) into tFilePropValuesA
 
    put empty into msg
