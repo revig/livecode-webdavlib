@@ -2,8 +2,8 @@ script "WebDavTestStackBehavior"
 
 
 
-local lBarName, lCurrentGetFileSizeSocket, lGetSizeAndDownload, sCurrentFileSize
-local lContacted, lAuthorizationRequested, sProgBarInitialized, sKeepLogData
+local sBarName, sCurrentFileSize
+local sContacted, sAuthorizationRequested, sProgBarInitialized, sKeepLogData
 
 -----------------------------------------------------------
 
@@ -843,25 +843,25 @@ command urlCallback pUrl, pStatus
 
    if sProgBarInitialized is empty and tCurrentFileSizeSet is TRUE then
       -- put item 3 of pStatus into sCurrentFileSize
-      put "upDownloadProgBar" into lBarName
-      put false into lContacted
-      put false into lAuthorizationRequested
-      initializeProgress lBarName, sCurrentFileSize
+      put "upDownloadProgBar" into sBarName
+      put false into sContacted
+      put false into sAuthorizationRequested
+      initializeProgress sBarName, sCurrentFileSize
    end if
 
    -- MOVE SCROLLBAR THUMB
    if tCurrentFileSizeSet is TRUE then
       if the label of btn "authBtn" is "Digest" then
-         -- if lAuthorizationRequested is true then
+         -- if sAuthorizationRequested is true then
          if pStatus begins with "uploading" or pStatus begins with "loading" then
             put item 2 of pStatus into tAmountLoaded
-            doProgress tAmountLoaded, tProgressInterval, lBarName, sCurrentFileSize -- tProgressInterval NOT USED
+            doProgress tAmountLoaded, tProgressInterval, sBarName, sCurrentFileSize -- tProgressInterval NOT USED
          end if
          -- end if
       else
          if pStatus begins with "uploading" or pStatus begins with "loading" then
             put item 2 of pStatus into tAmountLoaded
-            doProgress tAmountLoaded, tProgressInterval, lBarName, sCurrentFileSize -- tProgressInterval NOT USED
+            doProgress tAmountLoaded, tProgressInterval, sBarName, sCurrentFileSize -- tProgressInterval NOT USED
          end if
       end if
    end if
@@ -871,10 +871,10 @@ command urlCallback pUrl, pStatus
 
    if the label of btn "authBtn" is "Digest" then
       if item 1 of pStatus is "contacted" then
-         put true into lContacted
+         put true into sContacted
       end if
-      if item 1 of pStatus is "error" and lContacted is true then
-         put true into lAuthorizationRequested
+      if item 1 of pStatus is "error" and sContacted is true then
+         put true into sAuthorizationRequested
       end if
    end if
 
@@ -882,7 +882,7 @@ command urlCallback pUrl, pStatus
    if tCurrentFileSizeSet is TRUE then
       if pStatus is "downloaded" or pStatus is "uploaded" then
          put true into tEndPos
-         doProgress sCurrentFileSize, tProgressInterval, lBarName, sCurrentFileSize, tEndPos -- tProgressInterval NOT USED
+         doProgress sCurrentFileSize, tProgressInterval, sBarName, sCurrentFileSize, tEndPos -- tProgressInterval NOT USED
       end if
    end if
 end urlCallback
@@ -1066,9 +1066,9 @@ private command prepareProgress pBarName pCallback
    end if
 
    if pBarName is empty then
-      put "upDownloadProgBar" into lBarName
+      put "upDownloadProgBar" into sBarName
    else
-      put pBarName into lBarName
+      put pBarName into sBarName
    end if
 
    set the cursor to busy
