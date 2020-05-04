@@ -320,40 +320,26 @@ command checkWritePermission
    put FALSE into tCallback
    put commonSettings(tCallback) into tRequestDataA
 
-   put "PUT" into tRequestDataA["method"]
    put "writeTest.txt" into tFile
    put fld "davDirFld" & tFile into tURI
-   put tURI into tRequestDataA["uri"]
-   --   put "urlCallback" into tCallBack
-   --   put tCallBack into tRequestDataA["callback"]
-   --   put the long id of this stack into tCallbackTarget
-   --   put tCallbackTarget into tRequestDataA["callbackTarget"]
-   put "text/plain" into tContType
-   put tContType into tRequestDataA["contentType"]
-   ## GET SIZE OF FILE TO UPLOAD
-   put 4 into sCurrentFileSize -- 4 BYTES FOR WORD "test"
-   put sCurrentFileSize into tRequestDataA["contentLength"]
-   put "test" into tDataToUpload
-   put tDataToUpload into tRequestDataA["dataToUpload"]
+
+   put fld "davDirFld" into tRequestDataA["uri"]
 
    wdlSetupNewRequest tRequestDataA
    put the result into tReqID
 
-   # WORKS WITH libURLDownloadToFile, libURLftpUpload, libURLftpUploadFile, put,
-   # AND load COMMANDS, AS WELL AS DOWNLOADS TRIGGERED BY EVALUATING AN FTP OR HTTP URL
-   -- prepareProgress
-
-   ## REQUEST
-   put wdlExecute(tReqID) into tServerResponse
+   # REQUEST
+   put wdlWritePermission(tReqID) into tServerResponse
 
    wdlCleanup tReqID
 
-   ## RESPONSE
+   # RESPONSE
    if tServerResponse contains "Error" then
       put cr & cr & tServerResponse after fld "errorFld"
    else -- success
       # CHECKING WRITE PERMISSIONS, SO KEEP LOG DATA OF PUT METHOD
       put TRUE into sKeepLogData
+
       put deleteFileFolder(tURI) into tDeleteResult
    end if
    put "can write result:" && line 1 of tServerResponse & "," && "delete result:" && tDeleteResult

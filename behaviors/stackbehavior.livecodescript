@@ -284,6 +284,86 @@ end wdlGetFile
 
 
 /*----------------------------------------------------------------------
+--| FUNCTION wdlWritePermission
+--|
+--| Author: rabit
+--| Version:  1.0
+--| Created: 2020-05-05
+--| Last Mod: 2020-05-05
+--| Requires: wdlExecute()
+--|
+--| Summary: Write permission test.
+--|
+--| Format:  wdlWritePermission(param)
+--|
+--| Parameters: integer <pReqID>
+--|
+--| Return: string
+----------------------------------------------------------------------*/
+
+function wdlWritePermission pReqID
+   local tFile, tContType, tDataToUpload, tResponse
+
+   put "PUT" into sWebDavPoolA[pReqID]["method"]
+   put "wdlWritePermission" into sWebDavPoolA[pReqID]["requestHandler"]
+
+   put "writeTest.txt" into tFile
+   put sWebDavPoolA[pReqID]["uri"] & tFile into sWebDavPoolA[pReqID]["uri"]
+
+   put "text/plain" into tContType
+   put tContType into sWebDavPoolA[pReqID]["contentType"]
+
+   # SIZE OF FILE TO UPLOAD
+   put 4 into tFileSize -- 4 BYTES FOR WORD "test"
+   put tFileSize into sWebDavPoolA[pReqID]["contentLength"]
+   put "test" into tDataToUpload
+   put tDataToUpload into sWebDavPoolA[pReqID]["dataToUpload"]
+
+   # REQUEST
+   put wdlExecute(pReqID) into tResponse
+
+   return tResponse
+end wdlWritePermission
+
+
+
+
+
+/*----------------------------------------------------------------------
+--| FUNCTION wdlDeleteFileFolder
+--|
+--| Author: rabit
+--| Version:  1.0
+--| Created: 2020-05-05
+--| Last Mod: 2020-05-05
+--| Requires: wdlExecute()
+--|
+--| Summary: Delete file or folder.
+--|
+--| Format:  wdlDeleteFileFolder(param)
+--|
+--| Parameters: integer <pReqID>
+--|
+--| Return: string
+----------------------------------------------------------------------*/
+
+function wdlDeleteFileFolder pReqID
+   local tResponse
+
+   put "DELETE" into sWebDavPoolA[pReqID]["method"]
+   put "wdlDeleteFileFolder" into sWebDavPoolA[pReqID]["requestHandler"]
+
+   # REQUEST
+   put wdlExecute(pReqID) into tResponse
+
+   return tResponse
+end wdlDeleteFileFolder
+
+
+
+
+
+/*----------------------------------------------------------------------
 --| COMMAND wdlSetupNewRequest
 --|
 --| Author: rabit
