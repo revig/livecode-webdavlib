@@ -174,6 +174,41 @@ end wdlSet
 
 
 /*----------------------------------------------------------------------
+--| FUNCTION wdlGetserverMethods
+--|
+--| Author: rabit
+--| Version:  1.0
+--| Created: 2020-05-04
+--| Last Mod: 2020-05-04
+--| Requires: --
+--|
+--| Summary: Get comma delimited list of server methods.
+--|
+--| Format:  wdlGetserverMethods(param)
+--|
+--| Parameters: integer <pReqID>
+--|
+--| Return: string
+----------------------------------------------------------------------*/
+
+function wdlGetserverMethods pReqID
+   local tServerMethods
+
+   put "OPTIONS" into sWebDavPoolA[pReqID]["method"]
+   put "wdlGetserverMethods" into sWebDavPoolA[pReqID]["requestHandler"]
+
+   # REQUEST
+   put wdlExecute(pReqID) into tServerMethods
+
+   return tServerMethods
+end wdlGetserverMethods
+
+
+
+
+
+
+/*----------------------------------------------------------------------
 --| COMMAND wdlSetupNewRequest
 --|
 --| Author: rabit

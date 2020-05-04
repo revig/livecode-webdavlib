@@ -16,30 +16,23 @@ local sContacted, sAuthorizationRequested, sProgBarInitialized, sKeepLogData
 ----------------------------------
 
 command options
-   getServerMethods
-end options
-
-
-command getServerMethods
-   local tRequestDataA, tReqID
+   local tCallback, tRequestDataA, tReqID, tRequestedData
 
    prepareLogFields
 
    put FALSE into tCallback
    put commonSettings(tCallback) into tRequestDataA
-
    put fld "davDirFld" into tRequestDataA["uri"]
-   put "OPTIONS" into tRequestDataA["method"]
 
    wdlSetupNewRequest tRequestDataA
    put the result into tReqID
 
    # REQUEST
-   get wdlExecute(tReqID)
-   put it
+   put wdlGetserverMethods(tReqID) into tRequestedData
 
+   put "wdlGetserverMethods:" && tRequestedData
    wdlCleanup tReqID
-end getServerMethods
+end options
 
 ------------------------------
 
