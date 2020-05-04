@@ -12,7 +12,7 @@ local sContacted, sAuthorizationRequested, sProgBarInitialized, sKeepLogData
 # REQUEST HANDLERS
 ---------------------------------------------
 ----------------------------------
-# METHOD OPTIONS
+## METHOD: OPTIONS
 ----------------------------------
 
 command options
@@ -45,7 +45,7 @@ end getServerMethods
 
 
 ----------------------------------
-# METHOD PROPFIND
+## METHOD: PROPFIND
 ----------------------------------
 
 command fileSize
@@ -280,7 +280,7 @@ end checkLocked
 
 
 ----------------------------------
-# METHOD GET
+## METHOD: GET
 ----------------------------------
 
 command downloadFile
@@ -354,7 +354,7 @@ end getFile
 
 
 ----------------------------------
-# METHOD PUT
+## METHOD: PUT
 ----------------------------------
 
 command checkWritePermission
@@ -481,7 +481,7 @@ end putFile
 
 
 ----------------------------------
-# METHOD DELETE
+## METHOD: DELETE
 ----------------------------------
 
 command deleteFile
@@ -541,7 +541,7 @@ end deleteFolder
 
 
 ----------------------------------
-# METHOD MKCOL
+## METHOD: MKCOL
 ----------------------------------
 
 command createFolder
@@ -572,7 +572,7 @@ end createFolder
 
 
 ----------------------------------
-# METHOD PROPPATCH
+## METHOD: PROPPATCH
 ----------------------------------
 
 command setProperties
@@ -679,7 +679,7 @@ end removeProperties
 
 
 ----------------------------------
-# METHOD LOCK
+## METHOD: LOCK
 ----------------------------------
 
 command lockFile
@@ -717,7 +717,7 @@ end lockFile
 
 
 ----------------------------------
-# METHOD UNLOCK
+## METHOD: UNLOCK
 ----------------------------------
 
 command unlockFile
@@ -756,7 +756,7 @@ end unlockFile
 
 
 ----------------------------------
-# METHOD HEAD
+## METHOD: HEAD
 ----------------------------------
 
 function getFileHeader pFile pHeader
