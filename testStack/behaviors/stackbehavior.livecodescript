@@ -88,9 +88,10 @@ end fileSize
 
 
 command fileList
-   local tPropsXML, tContType, tRequestDataA, tReqID, tResponseData
-   local tStartLineNum, tEndLineNum, tFilesListXML, tFilesListA
-   local tTheKeys, tKey, tFileFolder, tDate, tFileList
+   local tCallback, tRequestDataA, tReqID
+   local tProptResponseData, tProp
+
+   libUrlSetStatusCallback
 
    prepareLogFields
 
@@ -98,28 +99,34 @@ command fileList
    put commonSettings(tCallback) into tRequestDataA
 
    put fld "davDirFld" into tRequestDataA["uri"]
-   put "PROPFIND" into tRequestDataA["method"]
-
-   # GET FILE / FOLDER PATHS (NAMES) ONLY
-   # LEAVE tPropsXML EMPTY TO RETREIVE ALL PROPS
-   -- put wdlPropertyNamesXMLdata("resourcetype") into tPropsXML
-   -- put "text/xml; charset=" & quote & "utf-8" & quote into tContType
-
-   put tPropsXML into tRequestDataA["propertiesXML"]
-   put "application/xml; charset=" & quote & "utf-8" & quote into tContType
-   put tContType into tRequestDataA["contentType"]
+   put 1 into tRequestDataA["depth"]
 
    wdlSetupNewRequest tRequestDataA
    put the result into tReqID
 
-   ## REQUEST
-   put wdlExecute(tReqID) into tResponseData
+   # REQUEST
+   put wdlGetFileList(tReqID) into tResponseData
 
    writeToLogWDL tReqID, tResponseData
 
-   put lineOffset("<?xml", tResponseData) into tStartLineNum
-   put lineOffset("</D:multistatus>", tResponseData) into tEndLineNum
-   put line tStartLineNum to tEndLineNum of tResponseData into tFilesListXML
+   put "creationdate" into tProp
+   # GET FILE / FOLDER PATHS AND CREATION DATES (MODIFICATION DATES)
+   put XMLtoFileList(tResponseData, tProp)
+
+   wdlCleanup tReqID
+end fileList
+
+
+
+
+
+function XMLtoFileList pXMLdata pProp
+   local tStartLineNum, tEndLineNum, tFilesListXML, tFilesListA
+   local tTheKeys, tKey, tFileFolder, tDate
+
+   put lineOffset("<?xml", pXMLdata) into tStartLineNum
+   put lineOffset("</D:multistatus>", pXMLdata) into tEndLineNum
+   put line tStartLineNum to tEndLineNum of pXMLdata into tFilesListXML
 
    put convertXMLToArray(tFilesListXML, , ) into tFilesListA
    -- put printArray("theArray", tFilesListA)
@@ -132,37 +139,39 @@ command fileList
       put tFilesListA["multistatus"][tKey]["href"] into tFileFolder
       if line -1 of tFileFolder is empty then next repeat
 
-      if tPropsXML is empty then
-         put tFilesListA["multistatus"][tKey]["propstat"]["prop"]["creationdate"] into tDate
-         if tDate is empty then
-            put tFilesListA["multistatus"][tKey]["propstat[1]"]["prop"]["creationdate"] into tDate
-         end if
-         if tDate <> empty then
-            put "CD:" && tDate into tDate
-         end if
+      if pProp <> empty then
+         if pProp is "creationdate" then
+            put tFilesListA["multistatus"][tKey]["propstat"]["prop"]["creationdate"] into tDate
+            if tDate is empty then
+               put tFilesListA["multistatus"][tKey]["propstat[1]"]["prop"]["creationdate"] into tDate
+            end if
+            if tDate <> empty then
+               put "CD:" && tDate into tDate
+            end if
 
 
-         if tDate is empty then
-            put tFilesListA["multistatus"][tKey]["propstat"]["prop"]["getlastmodified"] into tDate
-         end if
-         if tDate is empty then
-            put tFilesListA["multistatus"][tKey]["propstat[1]"]["prop"]["getlastmodified"] into tDate
-         end if
+            if tDate is empty then
+               put tFilesListA["multistatus"][tKey]["propstat"]["prop"]["getlastmodified"] into tDate
+            end if
+            if tDate is empty then
+               put tFilesListA["multistatus"][tKey]["propstat[1]"]["prop"]["getlastmodified"] into tDate
+            end if
 
-         if tDate <> empty then
-            put "MD:" && tDate into tDate
-         end if
+            if tDate <> empty then
+               put "MD:" && tDate into tDate
+            end if
 
-         put tDate && "--" && tFileFolder & return after tFileList
+            put tDate && "--" && tFileFolder & return after tFileList
+         else
+            put tFileFolder & return after tFileList
+         end if -- if pProp is "creationdate"
       else
          put tFileFolder & return after tFileList
-      end if
+      end if -- if pProp <> empty
    end repeat
 
-   put tFileList
-
-   wdlCleanup tReqID
-end fileList
+   return tFileList
+end XMLtoFileList
 
 
 

@@ -404,6 +404,44 @@ end wdlPutFile
 
 
 /*----------------------------------------------------------------------
+--| FUNCTION wdlGetFileList
+--|
+--| Author: rabit
+--| Version:  1.0
+--| Created: 2020-05-05
+--| Last Mod: 2020-05-05
+--| Requires: --
+--|
+--| Summary: Get a XML directory listing.
+--|
+--| Format:  wdlGetFileList(param)
+--|
+--| Parameters: integer <pReqID>
+--|
+--| Return: string
+----------------------------------------------------------------------*/
+
+function wdlGetFileList pReqID
+   local tContType, tFileListXML
+
+   put "PROPFIND" into sWebDavPoolA[pReqID]["method"]
+   put "wdlGetFileList" into sWebDavPoolA[pReqID]["requestHandler"]
+
+   put empty into sWebDavPoolA[pReqID]["propertiesXML"]
+   put "application/xml; charset=" & quote & "utf-8" & quote into tContType
+   put tContType into sWebDavPoolA[pReqID]["contentType"]
+
+   # REQUEST
+   put wdlExecute(pReqID) into tFileListXML
+
+   return tFileListXML
+end wdlGetFileList
+
+
+
+
+
+/*----------------------------------------------------------------------
 --| COMMAND wdlSetupNewRequest
 --|
 --| Author: rabit
@@ -2045,9 +2083,9 @@ end _wdlResponseToReturn
 --| FUNCTION _wdlCustomHeaders
 --|
 --| Author: rabit
---| Version:  1.0
+--| Version:  1.1
 --| Created: 2020-04-01
---| Last Mod: --
+--| Last Mod: 2020-05-05
 --| Requires: --
 --|
 --| Summary: Build custom headers.
@@ -2117,7 +2155,11 @@ private function _wdlCustomHeaders pReqID
 
          # FOR DIRECTORY LISTINGS ADD DEPTH
          if ("resourcetype" is in sWebDavPoolA[pReqID]["propertiesXML"]) or (sWebDavPoolA[pReqID]["propertiesXML"] is empty) then
-            put return & "Depth:" && the cDepth of stack "WebDavLib" after tHeaders
+           if sWebDavPoolA[pReqID]["depth"] is an integer then
+             put return & "Depth:" && sWebDavPoolA[pReqID]["depth"] after tHeaders
+           else
+             put return & "Depth:" && the cDepth of stack "WebDavLib" after tHeaders
+           end if
          end if
 
          if sWebDavPoolA[pReqID]["propertiesXML"] is empty then
