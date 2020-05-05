@@ -2,8 +2,8 @@ script "WebDavTestStackBehavior"
 
 
 
-local lBarName, lCurrentGetFileSizeSocket, lGetSizeAndDownload, sCurrentFileSize
-local lContacted, lAuthorizationRequested, sProgBarInitialized, sKeepLogData
+local sBarName, sCurrentFileSize
+local sContacted, sAuthorizationRequested, sProgBarInitialized, sKeepLogData
 
 -----------------------------------------------------------
 
@@ -12,122 +12,86 @@ local lContacted, lAuthorizationRequested, sProgBarInitialized, sKeepLogData
 # REQUEST HANDLERS
 ---------------------------------------------
 ----------------------------------
-# METHOD OPTIONS
+## METHOD: OPTIONS
 ----------------------------------
 
 command options
-   getServerMethods
-end options
-
-
-command getServerMethods
-   local tRequestDataA, tReqID
+   local tCallback, tRequestDataA, tReqID, tRequestedData
 
    prepareLogFields
 
    put FALSE into tCallback
    put commonSettings(tCallback) into tRequestDataA
-
    put fld "davDirFld" into tRequestDataA["uri"]
-   put "OPTIONS" into tRequestDataA["method"]
 
    wdlSetupNewRequest tRequestDataA
    put the result into tReqID
 
    # REQUEST
-   get wdlExecute(tReqID)
-   put it
+   put wdlGetserverMethods(tReqID) into tRequestedData
 
+   put "wdlGetserverMethods:" && tRequestedData
    wdlCleanup tReqID
-end getServerMethods
+end options
 
 ------------------------------
 
 
 ----------------------------------
-# METHOD PROPFIND
+## METHOD: PROPFIND
 ----------------------------------
 
 command fileSize
-   local tFile, tProps, tNameSpace, tFilePropValues
+   local tFile, tProps, tNameSpace, tCallback
+   local tRequestDataA, tReqID, tFilePropValuesA
+
+   libUrlSetStatusCallback
 
    put fld "davDirFld" & fld "remoteFileFld" into tFile
 
    # GET PROPERTY
    # LEAVE EMPTY TO GET ALL PROPERTIES
-   -- put "creationdate" into tProps
    put "getcontentlength" into tProps
-   -- put "creationdate,getcontentlength" into tProps
+   -- put "creationdate" into tProps
+   -- put "getcontentlength,getlastmodified" into tProps
 
    # CUSTOM PROPERTIES
    # USE tNameSpace FOR CUSTOM PROPERTIES ONLY!!!!!
-   -- put quote & the cNameSpace of this stack & quote into tNameSpace
+   -- put quote & fld "namespaceFld" & quote into tNameSpace
    -- put "authors,testTag" into tProps
    # USE propname TO RETREIVE ALL PROPERTY NAMES
    -- put "propname" into tProps
-
-   put getFileProps(tFile, tNameSpace, tProps) into tFilePropValues
-
-   --   put offset("<?xml", tFilePropValues) into tFilePropXMLStart
-   --   put char tFilePropXMLStart to -1 of tFilePropValues into tFilePropXML
-   --   put ConvertXMLToArray(tFilePropXML, , TRUE) into tFilePropValuesA
-   --   put tFilePropValuesA["multistatus"]["response"]["propstat"]["prop"]["getcontentlength"]["@value"]
-   --   -- put printArray("theArray", tFilePropValuesA)
-
-
-   -- put "Author,testTag" into tProps
-   -- put "creationdate,getcontentlength" into tProps
-   -- put "getcontentlength" into tProps
-
-   repeat for each item thisItem in tProps
-      put wdlPropertyVals(thisItem, tFilePropValues) after tTheResult
-   end repeat
-
-   delete char -1 of tTheResult
-   put tTheResult -- & return & return & tFilePropValues
-end fileSize
-
-
-
-
-function getFileProps pFile, pNameSpace, pProps
-   local tCustomProps, tPropsXML, tContType, tRequestDataA, tReqID
 
    prepareLogFields
 
    put FALSE into tCallback
    put commonSettings(tCallback) into tRequestDataA
-
-   put "PROPFIND" into tRequestDataA["method"]
-   put pFile into tRequestDataA["uri"]
-   if pNameSpace is not empty then -- CUSTOM PROPERTIES
-      put TRUE into tCustomProps
-   end if
-   put wdlPropertyNamesXMLdata(pProps, tCustomProps) into tPropsXML
-
-   put tPropsXML into tRequestDataA["propertiesXML"]
-   put "application/xml; charset=" & quote & "utf-8" & quote into tContType
-   put tContType into tRequestDataA["contentType"]
-   put pNameSpace into tRequestDataA["nameSpace"]
+   put tFile into tRequestDataA["uri"]
 
    wdlSetupNewRequest tRequestDataA
    put the result into tReqID
 
    # REQUEST
-   get wdlExecute(tReqID)
+   put wdlGetFileProps(tReqID, tProps) into tFilePropValuesA
 
-   return it
+   put empty into msg
+   repeat for each key tKey in tFilePropValuesA
+      put tKey & ":" && tFilePropValuesA[tKey] & return after msg
+   end repeat
 
    wdlCleanup tReqID
-end getFileProps
+
+   return tFilePropValuesA["getcontentlength"]
+end fileSize
 
 
 
 
 command fileList
-   local tPropsXML, tContType, tRequestDataA, tReqID, tResponseData
-   local tStartLineNum, tEndLineNum, tFilesListXML, tFilesListA
-   local tTheKeys, tKey, tFileFolder, tDate, tFileList
+   local tCallback, tRequestDataA, tReqID
+   local tProptResponseData, tProp
+
+   libUrlSetStatusCallback
 
    prepareLogFields
 
@@ -135,28 +99,34 @@ command fileList
    put commonSettings(tCallback) into tRequestDataA
 
    put fld "davDirFld" into tRequestDataA["uri"]
-   put "PROPFIND" into tRequestDataA["method"]
-
-   # GET FILE / FOLDER PATHS (NAMES) ONLY
-   # LEAVE tPropsXML EMPTY TO RETREIVE ALL PROPS
-   -- put wdlPropertyNamesXMLdata("resourcetype") into tPropsXML
-   -- put "text/xml; charset=" & quote & "utf-8" & quote into tContType
-
-   put tPropsXML into tRequestDataA["propertiesXML"]
-   put "application/xml; charset=" & quote & "utf-8" & quote into tContType
-   put tContType into tRequestDataA["contentType"]
+   put 1 into tRequestDataA["depth"]
 
    wdlSetupNewRequest tRequestDataA
    put the result into tReqID
 
-   ## REQUEST
-   put wdlExecute(tReqID) into tResponseData
+   # REQUEST
+   put wdlGetFileList(tReqID) into tResponseData
 
    writeToLogWDL tReqID, tResponseData
 
-   put lineOffset("<?xml", tResponseData) into tStartLineNum
-   put lineOffset("</D:multistatus>", tResponseData) into tEndLineNum
-   put line tStartLineNum to tEndLineNum of tResponseData into tFilesListXML
+   put "creationdate" into tProp
+   # GET FILE / FOLDER PATHS AND CREATION DATES (MODIFICATION DATES)
+   put XMLtoFileList(tResponseData, tProp)
+
+   wdlCleanup tReqID
+end fileList
+
+
+
+
+
+function XMLtoFileList pXMLdata pProp
+   local tStartLineNum, tEndLineNum, tFilesListXML, tFilesListA
+   local tTheKeys, tKey, tFileFolder, tDate
+
+   put lineOffset("<?xml", pXMLdata) into tStartLineNum
+   put lineOffset("</D:multistatus>", pXMLdata) into tEndLineNum
+   put line tStartLineNum to tEndLineNum of pXMLdata into tFilesListXML
 
    put convertXMLToArray(tFilesListXML, , ) into tFilesListA
    -- put printArray("theArray", tFilesListA)
@@ -169,43 +139,47 @@ command fileList
       put tFilesListA["multistatus"][tKey]["href"] into tFileFolder
       if line -1 of tFileFolder is empty then next repeat
 
-      if tPropsXML is empty then
-         put tFilesListA["multistatus"][tKey]["propstat"]["prop"]["creationdate"] into tDate
-         if tDate is empty then
-            put tFilesListA["multistatus"][tKey]["propstat[1]"]["prop"]["creationdate"] into tDate
-         end if
-         if tDate <> empty then
-            put "CD:" && tDate into tDate
-         end if
+      if pProp <> empty then
+         if pProp is "creationdate" then
+            put tFilesListA["multistatus"][tKey]["propstat"]["prop"]["creationdate"] into tDate
+            if tDate is empty then
+               put tFilesListA["multistatus"][tKey]["propstat[1]"]["prop"]["creationdate"] into tDate
+            end if
+            if tDate <> empty then
+               put "CD:" && tDate into tDate
+            end if
 
 
-         if tDate is empty then
-            put tFilesListA["multistatus"][tKey]["propstat"]["prop"]["getlastmodified"] into tDate
-         end if
-         if tDate is empty then
-            put tFilesListA["multistatus"][tKey]["propstat[1]"]["prop"]["getlastmodified"] into tDate
-         end if
+            if tDate is empty then
+               put tFilesListA["multistatus"][tKey]["propstat"]["prop"]["getlastmodified"] into tDate
+            end if
+            if tDate is empty then
+               put tFilesListA["multistatus"][tKey]["propstat[1]"]["prop"]["getlastmodified"] into tDate
+            end if
 
-         if tDate <> empty then
-            put "MD:" && tDate into tDate
-         end if
+            if tDate <> empty then
+               put "MD:" && tDate into tDate
+            end if
 
-         put tDate && "--" && tFileFolder & return after tFileList
+            put tDate && "--" && tFileFolder & return after tFileList
+         else
+            put tFileFolder & return after tFileList
+         end if -- if pProp is "creationdate"
       else
          put tFileFolder & return after tFileList
-      end if
+      end if -- if pProp <> empty
    end repeat
 
-   put tFileList
-
-   wdlCleanup tReqID
-end fileList
+   return tFileList
+end XMLtoFileList
 
 
 
 
 command getProperties
-   local tFile, tNameSpace, tProps, tFilePropValues
+   local tFile, tNameSpace, tProps, tCallback
+   local tRequestDataA, tReqID, tFilePropValuesA
+   local tKey, tTheResult
 
    put fld "davDirFld" & fld "remoteFileFld" into tFile
 
@@ -230,48 +204,76 @@ command getProperties
    --   put empty into tNameSpace
    --   put "propname" into tProps
 
-   put getFileProps(tFile, tNameSpace, tProps) into tFilePropValues
+   prepareLogFields
 
-   --   put offset("<?xml", tFilePropValues) into tFilePropXMLStart
-   --   put char tFilePropXMLStart to -1 of tFilePropValues into tFilePropXML
-   --   put ConvertXMLToArray(tFilePropXML, , TRUE) into tFilePropValuesA
-   --   put tFilePropValuesA["multistatus"]["response"]["propstat"]["prop"]["getcontentlength"]["@value"]
-   --   -- put printArray("theArray", tFilePropValuesA)
+   put FALSE into tCallback
+   put commonSettings(tCallback) into tRequestDataA
 
+   put tFile into tRequestDataA["uri"]
+   # CUSTOM PROPERTIES
+   put tNameSpace into tRequestDataA["nameSpace"]
 
-   put "testTag,Author" into tProps
-   -- put "testTag" into tProps
-   -- put "creationdate,getcontentlength" into tProps
+   wdlSetupNewRequest tRequestDataA
+   put the result into tReqID
 
-   repeat for each item thisItem in tProps
-      put wdlPropertyVals(thisItem, tFilePropValues) after tTheResult
+   # REQUEST
+   put wdlGetCustomProps(tReqID, tProps) into tFilePropValuesA
+
+   wdlCleanup tReqID
+
+   repeat for each key tKey in tFilePropValuesA
+      put tKey & ":" && tFilePropValuesA[tKey] & return after tTheResult
    end repeat
 
-   delete char -1 of tTheResult
-   put tTheResult & return & return & tFilePropValues
+   if tTheResult is empty then
+      if the number of items of tProps is 1 then
+         put "Property not set."
+      else
+         put "Properties not set."
+      end if
+   else
+      put tTheResult -- & return & return & tFilePropValues
+   end if
 end getProperties
 
 
 
 
 command checkLocked
-   local tFile, tNameSpace, tProps, tFileLockPropValue
+   local tFile, tProps, tRequestDataA, tReqID
+   local tFilePropValuesA, tKey, tTheResult
+
+   prepareLogFields
 
    put fld "davDirFld" & fld "remoteFileFld" into tFile
 
-   -- USE tNameSpace ONLY FOR CUSTOM PROPERTIES
-   -- put quote & the cNameSpace of this stack & quote into tNameSpace
-
-   -- CUSTOM PROPERTIES
-   -- put "authors,testTag" into tProps -- LEAVE EMPTY TO GET ALL PROPERTIES
-
    put "lockdiscovery" into tProps
 
-   put getFileProps(tFile, tNameSpace, tProps) into tFileLockPropValue
-   if tFileLockPropValue contains "opaquelocktoken:" then
-      put "File:" && tFile && "is locked"
+   put FALSE into tCallback
+   put commonSettings(tCallback) into tRequestDataA
+
+   put tFile into tRequestDataA["uri"]
+
+   wdlSetupNewRequest tRequestDataA
+   put the result into tReqID
+
+   # REQUEST
+   put wdlGetFileProps(tReqID, tProps) into tFilePropValuesA
+
+   wdlCleanup tReqID
+
+   repeat for each key tKey in tFilePropValuesA
+      put tKey & ":" && tFilePropValuesA[tKey] & return after tTheResult
+   end repeat
+
+   if tTheResult is empty then
+      if the number of items of tProps is 1 then
+         put "Property not set."
+      else
+         put "Properties not set."
+      end if
    else
-      put "File:" && tFile && "is not locked"
+      put tTheResult -- & return & return & tFilePropValuesA
    end if
 end checkLocked
 
@@ -280,11 +282,13 @@ end checkLocked
 
 
 ----------------------------------
-# METHOD GET
+## METHOD: GET
 ----------------------------------
 
 command downloadFile
    local tFile, tDownloadFile = ""
+
+   put empty into msg
 
    put fld "downloadPathFld" into tDestPath
    if tDestPath is empty then
@@ -294,33 +298,23 @@ command downloadFile
 
 
    if the optionkey is not down then
-      put true into tDownloadFile
+      put TRUE into tDownloadFile
    end if
 
    put fld "davDirFld" & fld "remoteFileFld" into tFile
 
-   getFile tFile, tDownloadFile
-end downloadFile
-
-
-
-command getFile pFile pDownloadFile
-   local tHeader, tCallBack, tCallbackTarget, tRequestDataA, tReqID, tServerResponse
-   local tFileName, tDestPath
-
    put empty into sCurrentFileSize
 
-   ## GET SIZE OF FILE TO DOWNLOAD
-   put "Content-Length" into tHeader
-   put getFileHeader (pFile, tHeader) into sCurrentFileSize
+   fileSize
+   put the result into sCurrentFileSize
 
-   if pDownloadFile is "true" then
+   if sCurrentFileSize is an integer and (tDownloadFile is TRUE) then
+      prepareLogFields
 
       put TRUE into tCallback
       put commonSettings(tCallback) into tRequestDataA
 
-      put "GET" into tRequestDataA["method"]
-      put pFile into tRequestDataA["uri"]
+      put tFile into tRequestDataA["uri"]
 
       wdlSetupNewRequest tRequestDataA
       put the result into tReqID
@@ -329,32 +323,31 @@ command getFile pFile pDownloadFile
       # AND load COMMANDS, AS WELL AS DOWNLOADS TRIGGERED BY EVALUATING AN FTP OR HTTP URL
       prepareProgress
 
-      ## REQUEST
-      put wdlExecute(tReqID) into tServerResponse
+      # REQUEST
+      put wdlGetFile(tReqID) into tData
 
-      wdlCleanup tReqID
-
-      ## RESPONSE
-      if tServerResponse contains "Error" then
-         put cr & cr & tServerResponse after fld "errorFld"
+      if tData contains "Error" then
+         put cr & cr & tData after fld "errorFld"
       else
          ## SUCCESS, SAVE FILE
          set the itemdelimiter to "/"
-         put last item of pFile into tFileName
+         put last item of tFile into tFileName
 
          put fld "downloadPathFld" & "/" & tFileName into tDestPath
 
-         put tServerResponse into URL ("binfile:" & tDestPath)
-      end if
-   end if -- IF PDOWNLOADFILE IS "TRUE" THEN
-end getFile
+         put tData into URL ("binfile:" & tDestPath)
+      end if -- if tData contains "Error"
+
+      wdlCleanup tReqID
+   end if -- if sCurrentFileSize is an integer and (tDownloadFile is TRUE)
+end downloadFile
 
 ----------------------------------
 
 
 
 ----------------------------------
-# METHOD PUT
+## METHOD: PUT
 ----------------------------------
 
 command checkWritePermission
@@ -366,40 +359,26 @@ command checkWritePermission
    put FALSE into tCallback
    put commonSettings(tCallback) into tRequestDataA
 
-   put "PUT" into tRequestDataA["method"]
    put "writeTest.txt" into tFile
    put fld "davDirFld" & tFile into tURI
-   put tURI into tRequestDataA["uri"]
-   --   put "urlCallback" into tCallBack
-   --   put tCallBack into tRequestDataA["callback"]
-   --   put the long id of this stack into tCallbackTarget
-   --   put tCallbackTarget into tRequestDataA["callbackTarget"]
-   put "text/plain" into tContType
-   put tContType into tRequestDataA["contentType"]
-   ## GET SIZE OF FILE TO UPLOAD
-   put 4 into sCurrentFileSize -- 4 BYTES FOR WORD "test"
-   put sCurrentFileSize into tRequestDataA["contentLength"]
-   put "test" into tDataToUpload
-   put tDataToUpload into tRequestDataA["dataToUpload"]
+
+   put fld "davDirFld" into tRequestDataA["uri"]
 
    wdlSetupNewRequest tRequestDataA
    put the result into tReqID
 
-   # WORKS WITH libURLDownloadToFile, libURLftpUpload, libURLftpUploadFile, put,
-   # AND load COMMANDS, AS WELL AS DOWNLOADS TRIGGERED BY EVALUATING AN FTP OR HTTP URL
-   -- prepareProgress
-
-   ## REQUEST
-   put wdlExecute(tReqID) into tServerResponse
+   # REQUEST
+   put wdlWritePermission(tReqID) into tServerResponse
 
    wdlCleanup tReqID
 
-   ## RESPONSE
+   # RESPONSE
    if tServerResponse contains "Error" then
       put cr & cr & tServerResponse after fld "errorFld"
    else -- success
       # CHECKING WRITE PERMISSIONS, SO KEEP LOG DATA OF PUT METHOD
       put TRUE into sKeepLogData
+
       put deleteFileFolder(tURI) into tDeleteResult
    end if
    put "can write result:" && line 1 of tServerResponse & "," && "delete result:" && tDeleteResult
@@ -409,47 +388,31 @@ end checkWritePermission
 
 
 command uploadFile
-   local tUploadFilePath, tIdentNum, tIdent
+  local tFilePath, tFile, tCallback, tRequestDataA
+  local tURI, tReqID, tServerResponse
 
-   put fld "filePathFld" into tUploadFilePath
-   put 1 into tIdentNum
+   put fld "filePathFld" into tFilePath
 
-   put tIdentNum & "-" into tIdent
-   putFile tUploadFilePath, tIdent
-end uploadFile
+   # GET SIZE OF FILE TO UPLOAD
+   getLocalFileSize tFilePath
 
-
-
-
-command putFile pFile pIdent
-   local tFile, tURI, tCallBack, tCallbackTarget, tContType
-   local tDataToUpload, tRequestDataA, tReqID, tServerResponse
-
-   ## GET SIZE OF FILE TO UPLOAD
-   getLocalFileSize pFile
+   set the itemdelimiter to "/"
+   put last item of tFilePath into tFile
 
    prepareLogFields
 
    put TRUE into tCallback
    put commonSettings(tCallback) into tRequestDataA
 
-   put "PUT" into tRequestDataA["method"]
+   put tFilePath into tRequestDataA["filePath"]
 
    set the itemdelimiter to "/"
-   put last item of pFile into tFile
-   if pIdent is not empty then
-      put fld "davDirFld" & pIdent & the secs & "_" & tFile into tURI
-   else
-      put fld "davDirFld" & the secs & "_" & tFile into tURI
-   end if
+   put last item of tFilePath into tFile
+   put fld "davDirFld" & the secs & "_" & tFile into tURI
    put tURI into fld "fileToDeleteFld"
    put tURI into tRequestDataA["uri"]
 
-   put "application/x-www-form-urlencoded" into tContType
-   put tContType into tRequestDataA["contentType"]
    put sCurrentFileSize into tRequestDataA["contentLength"]
-   put URL ("binfile:" & pFile) into tDataToUpload
-   put tDataToUpload into tRequestDataA["dataToUpload"]
 
    wdlSetupNewRequest tRequestDataA
    put the result into tReqID
@@ -458,22 +421,22 @@ command putFile pFile pIdent
    # AND load COMMANDS, AS WELL AS DOWNLOADS TRIGGERED BY EVALUATING AN FTP OR HTTP URL
    prepareProgress
 
-   ## REQUEST
-   put wdlExecute(tReqID) into tServerResponse
+   # REQUEST
+   put wdlPutFile(tReqID) into tServerResponse
 
-   wdlCleanup tReqID
-
-   ## RESPONSE
    if tServerResponse contains "Error" then
       put cr & cr & tServerResponse after fld "errorFld"
    else
+      # SUCCESS
       if "201" is in line 1 of tServerResponse then
          put "Request ID" && tReqID & ": created" & cr after fld "statusFld"
       end if
+   end if -- if tServerResponse contains "Error"
 
-      put tServerResponse
-   end if
-end putFile
+   put "Upload response:" && tServerResponse
+
+   wdlCleanup tReqID
+end uploadFile
 
 ---------------------------------
 
@@ -481,7 +444,7 @@ end putFile
 
 
 ----------------------------------
-# METHOD DELETE
+## METHOD: DELETE
 ----------------------------------
 
 command deleteFile
@@ -494,10 +457,8 @@ end deleteFile
 
 
 
-
-
 function deleteFileFolder pFileFolder
-   local tRequestDataA, tReqID, tServerResponse
+   libUrlSetStatusCallback
 
    if sKeepLogData <> TRUE then
       prepareLogFields
@@ -509,31 +470,38 @@ function deleteFileFolder pFileFolder
    put FALSE into tCallback
    put commonSettings(tCallback) into tRequestDataA
 
-   put "DELETE" into tRequestDataA["method"]
    put pFileFolder into tRequestDataA["uri"]
 
    wdlSetupNewRequest tRequestDataA
    put the result into tReqID
 
-   # REQUEST
-   put wdlExecute(tReqID) into tServerResponse
+   put wdlDeleteFileFolder(tReqID) into tServerResponse
 
-   wdlCleanup tReqID
-
-   # RESPONSE
-   if tServerResponse contains "Error" then
-      put cr & cr & tServerResponse after fld "errorFld"
-   end if
    return tServerResponse
 end deleteFileFolder
 
 
 
+
 command deleteFolder
-   local tFolder
+   local tFolder, tServerResponse
 
    put fld "davDirFld" & "testFolder/" into tFolder
-   put deleteFileFolder(tFolder)
+
+   put deleteFileFolder(tFolder) into tServerResponse
+
+   if tServerResponse contains "Error" then
+      put cr & cr & tServerResponse after fld "errorFld"
+   else
+      # SUCCESS
+      if "204" is in line 1 of tServerResponse then
+         put "Request ID" && tReqID & ": deleted" & cr after fld "statusFld"
+      end if
+   end if -- if tServerResponse contains "Error"
+
+   put "Delete response:" && tServerResponse
+
+   wdlCleanup tReqID
 end deleteFolder
 
 ----------------------------------
@@ -541,11 +509,12 @@ end deleteFolder
 
 
 ----------------------------------
-# METHOD MKCOL
+## METHOD: MKCOL
 ----------------------------------
 
 command createFolder
-   local tFolder, tRequestDataA, tReqID
+   local tFolder, tCallback, tRequestDataA, tReqID
+   local tServerResponse
 
    put fld "davDirFld" & "testFolder/" into tFolder
 
@@ -554,16 +523,25 @@ command createFolder
    put FALSE into tCallback
    put commonSettings(tCallback) into tRequestDataA
 
-   put "MKCOL" into tRequestDataA["method"]
    put tFolder into tRequestDataA["uri"]
 
    wdlSetupNewRequest tRequestDataA
    put the result into tReqID
 
    # REQUEST
-   get wdlExecute(tReqID)
+   put wdlCreateFolder(tReqID) into tServerResponse
 
-   put it
+   if tServerResponse contains "Error" then
+      put cr & cr & tServerResponse after fld "errorFld"
+   else
+      # SUCCESS
+      if "201" is in line 1 of tServerResponse then
+         put "Request ID" && tReqID & ": created" & cr after fld "statusFld"
+      end if
+   end if -- if tServerResponse contains "Error"
+
+   put "Create folder response:" && tServerResponse
+
    wdlCleanup tReqID
 end createFolder
 
@@ -572,81 +550,56 @@ end createFolder
 
 
 ----------------------------------
-# METHOD PROPPATCH
+## METHOD: PROPPATCH
 ----------------------------------
 
 command setProperties
-   local tFile, tRemoveProps, tSetProps, tNameSpace
+   local tFile, tRemovePropsA, tNameSpace, tSetPropsA
 
    put fld "davDirFld" & fld "remoteFileFld" into tFile
 
-   -- put "Ralf Bitter,Xaver Bleed,Renglnadders Godhilf" into tSetProps["authors,Author"]
-   -- put "Ralf Bitter" into tSetProps["author"]
+   -- put "Ralf Bitter,Xaver Bleed,Renglnadders Godhilf" into tSetPropsA["authors,Author"]
+   -- put "Ralf Bitter" into tSetPropsA["author"]
 
    ----------
-   --   put "foo" into tSetProps[0]["testTag"]
-   --   put "Ralf Bitter" into tSetProps[0]["authors"]["Author"]
-   --   put "Xaver Bleed" into tSetProps[1]["authors"]["Author"]
-   --   put "Renglnadders Godhilf" into tSetProps[2]["authors"]["Author"]
+   --   put "foo" into tSetPropsA[0]["testTag"]
+   --   put "Ralf Bitter" into tSetPropsA[0]["authors"]["Author"]
+   --   put "Xaver Bleed" into tSetPropsA[1]["authors"]["Author"]
+   --   put "Renglnadders Godhilf" into tSetPropsA[2]["authors"]["Author"]
    -----------
 
    --------
-   put "foo" into tSetProps[0]["testTag"]
-   put "Ralf Bitter" into tSetProps[1]["Author"]
+   put "foo" into tSetPropsA[0]["testTag"]
+   put "Ralf Bitter" into tSetPropsA[1]["Author"]
    ---------
 
    put empty into tRemoveProps
 
    # USE tNameSpace FOR CUSTOM PROPERTIES ONLY!!!!!
-   -- put quote & the cNameSpace of this stack & quote into tNameSpace
    put quote & fld "namespaceFld" & quote into tNameSpace
 
-   setFileProps tFile, tSetProps, tRemoveProps, tNameSpace
+   setFileProps tFile, tSetPropsA, tRemovePropsA, tNameSpace
 end setProperties
 
 
 
 
-command setFileProps pFile, pSetProps, pRemoveProps, pNameSpace
+command setFileProps pFile, pSetPropsA, pRemovePropsA, pNameSpace
    local tPropsXML, tContType, tContLength, tRequestDataA, tReqID
-
-   ## CHECK PROPERTIES TO SET OR REMOVE
-   if (pSetProps is empty and pSetProps is not an array) and (pRemoveProps is empty and pRemoveProps is not an array) then
-      answer error "Properties list empty!"
-      exit to top
-   end if
-
-   if pSetProps is not empty and pSetProps is not an array then
-      answer error "Set properties list is not an array!"
-      exit to top
-   end if
-
-   if pRemoveProps is not empty and pRemoveProps is not an array then
-      answer error "Remove properties list is not an array!"
-      exit to top
-   end if
 
    prepareLogFields
 
    put FALSE into tCallback
    put commonSettings(tCallback) into tRequestDataA
 
-   put "PROPPATCH" into tRequestDataA["method"]
    put pFile into tRequestDataA["uri"]
-   ## BUILD PROPERTY XML DATA
-   put wdlSetRemovePropXMLdata(pSetProps, pRemoveProps) into tPropsXML
-   put tPropsXML into tRequestDataA["propertiesXML"]
-   put "application/xml; charset=" & quote & "utf-8" & quote into tContType
-   put tContType into tRequestDataA["contentType"]
-   put the number of chars of tPropsXML into tContLength
-   put tContLength into tRequestDataA["contentLength"]
    put pNameSpace into tRequestDataA["nameSpace"]
 
    wdlSetupNewRequest tRequestDataA
    put the result into tReqID
 
-   ## REQUEST
-   get wdlExecute(tReqID)
+   # REQUEST
+   get wdlSetFileProps(tReqID, pSetPropsA, pRemovePropsA)
    put it
 
    wdlCleanup tReqID
@@ -656,59 +609,57 @@ end setFileProps
 
 
 command removeProperties
-   local tFile, tRemoveProps, tSetProps
+   local tFile, tNameSpace, tRemovePropsA, tSetPropsA
 
    put fld "davDirFld" & fld "remoteFileFld" into tFile
 
-   -- put empty into tSetProps
-
-   -- put "authors" into tRemoveProps
-
-   -- put empty into tRemoveProps["authors"]
-   put empty into tRemoveProps["testTag"]
-   put empty into tRemoveProps["Author"]
+   -- put empty into tRemovePropsA["authors"]
+   put empty into tRemovePropsA["testTag"]
+   put empty into tRemovePropsA["Author"]
 
    # USE tNameSpace FOR CUSTOM PROPERTIES ONLY!!!!!
-   -- put quote & the cNameSpace of this stack & quote into tNameSpace
    put quote & fld "namespaceFld" & quote into tNameSpace
 
-   setFileProps tFile, tSetProps, tRemoveProps, tNameSpace
+   setFileProps tFile, tSetPropsA, tRemovePropsA, tNameSpace
 end removeProperties
 
 ----------------------------------
 
 
 ----------------------------------
-# METHOD LOCK
+## METHOD: LOCK
 ----------------------------------
 
 command lockFile
-   local tFile, tScope, tTimeout, tType
+   local tFile, tCallback, tOmitTsNet
    local tRequestDataA,tReqID
 
-   put fld "davDirFld" & fld "remoteFileFld" into tFile
-   put "exclusive" into tScope
-   put "write" into tType
-
    prepareLogFields
+
+   put fld "davDirFld" & fld "remoteFileFld" into tFile
 
    put FALSE into tCallback
    put commonSettings(tCallback) into tRequestDataA
 
-   put "LOCK" into tRequestDataA["method"]
    put tFile into tRequestDataA["uri"]
-   put "application/xml; charset=" & quote & "utf-8" & quote into tRequestDataA["contentType"]
-   put tScope into tRequestDataA["lockScope"]
-   put tType into tRequestDataA["lockType"]
    put "LCapp" into tRequestDataA["lockOwner"]
 
    wdlSetupNewRequest tRequestDataA
    put the result into tReqID
 
    # REQUEST
-   get wdlExecute(tReqID)
+   put wdlLock(tReqID) into tResponse
 
-   -- put it
+   if "200" is in line 2 of tResponse then
+      put "File" && tFile && "locked." & return & line 1 of tResponse into tResult
+   else
+      put "Error!" & return & tResponse into tResult
+   end if
+
+   writeStatusWDL tReqID, tResult
+
+   put tResult
+
    wdlCleanup tReqID
 end lockFile
 
@@ -717,65 +668,74 @@ end lockFile
 
 
 ----------------------------------
-# METHOD UNLOCK
+## METHOD: UNLOCK
 ----------------------------------
 
 command unlockFile
-   local tToken, tFile, tRequestDataA, tReqID
+   local tFile, tCallback, tRequestDataA
+   local tReqID, tResponse, tResult
 
-   put the cCurrentLockToken of stack "WebDavLib" into tToken
+   prepareLogFields
 
-   if tToken is not empty then
-      put fld "davDirFld" & fld "remoteFileFld" into tFile
+   put fld "davDirFld" & fld "remoteFileFld" into tFile
 
-      prepareLogFields
+   put FALSE into tCallback
+   put commonSettings(tCallback) into tRequestDataA
 
-      put FALSE into tCallback
-      put commonSettings(tCallback) into tRequestDataA
+   # IN CASE YOU KNOW A FILE'S LOCK TOKEN
+   -- put "<theLockTokenString>" into tRequestDataA["lockToken"]
 
-      put "UNLOCK" into tRequestDataA["method"]
-      put tFile into tRequestDataA["uri"]
-      put tToken into tRequestDataA["lockToken"]
+   put tFile into tRequestDataA["uri"]
 
-      wdlSetupNewRequest tRequestDataA
-      put the result into tReqID
+   wdlSetupNewRequest tRequestDataA
+   put the result into tReqID
 
-      # REQUEST
-      get wdlExecute(tReqID)
+   # REQUEST
+   put wdlUnlock(tReqID) into tResponse
 
-      -- put it
-      wdlCleanup tReqID
-
-      set the cCurrentLockToken of stack "WebDavLib" to empty
+   if "204" is in tResponse then
+      put "File" && tFile && "unlocked." into tResult
    else
-      answer error "There are no locked files!"
+      put "Error!" & return & tResponse into tResult
    end if
+
+   writeStatusWDL tReqID, tResult
+
+   put tResult
+
+   wdlCleanup tReqID
 end unlockFile
 
 ----------------------------------
 
 
 ----------------------------------
-# METHOD HEAD
+## METHOD: HEAD
 ----------------------------------
 
+command headerTest
+   put fld "davDirFld" & fld "remoteFileFld" into tFile
+
+   put getFileHeader(tFile, "Content-Length") into tResponse
+   put "Content-Length:" && tResponse
+end headerTest
+
+
 function getFileHeader pFile pHeader
-   local tRequestDataA, tReqID, tResponseData
+   local tCallback, tRequestDataA, tReqID, tResponseData
 
    prepareLogFields
 
    put FALSE into tCallback
    put commonSettings(tCallback) into tRequestDataA
 
-   put "HEAD" into tRequestDataA["method"]
    put pFile into tRequestDataA["uri"]
 
    wdlSetupNewRequest tRequestDataA
    put the result into tReqID
 
    ## REQUEST
-   get wdlExecute(tReqID)
-   put it into tResponseData
+   put wdlGetFileHeaders(tReqID) into tResponseData
 
    wdlCleanup tReqID
 
@@ -843,25 +803,25 @@ command urlCallback pUrl, pStatus
 
    if sProgBarInitialized is empty and tCurrentFileSizeSet is TRUE then
       -- put item 3 of pStatus into sCurrentFileSize
-      put "upDownloadProgBar" into lBarName
-      put false into lContacted
-      put false into lAuthorizationRequested
-      initializeProgress lBarName, sCurrentFileSize
+      put "upDownloadProgBar" into sBarName
+      put false into sContacted
+      put false into sAuthorizationRequested
+      initializeProgress sBarName, sCurrentFileSize
    end if
 
    -- MOVE SCROLLBAR THUMB
    if tCurrentFileSizeSet is TRUE then
       if the label of btn "authBtn" is "Digest" then
-         -- if lAuthorizationRequested is true then
+         -- if sAuthorizationRequested is true then
          if pStatus begins with "uploading" or pStatus begins with "loading" then
             put item 2 of pStatus into tAmountLoaded
-            doProgress tAmountLoaded, tProgressInterval, lBarName, sCurrentFileSize -- tProgressInterval NOT USED
+            doProgress tAmountLoaded, tProgressInterval, sBarName, sCurrentFileSize -- tProgressInterval NOT USED
          end if
          -- end if
       else
          if pStatus begins with "uploading" or pStatus begins with "loading" then
             put item 2 of pStatus into tAmountLoaded
-            doProgress tAmountLoaded, tProgressInterval, lBarName, sCurrentFileSize -- tProgressInterval NOT USED
+            doProgress tAmountLoaded, tProgressInterval, sBarName, sCurrentFileSize -- tProgressInterval NOT USED
          end if
       end if
    end if
@@ -871,10 +831,10 @@ command urlCallback pUrl, pStatus
 
    if the label of btn "authBtn" is "Digest" then
       if item 1 of pStatus is "contacted" then
-         put true into lContacted
+         put true into sContacted
       end if
-      if item 1 of pStatus is "error" and lContacted is true then
-         put true into lAuthorizationRequested
+      if item 1 of pStatus is "error" and sContacted is true then
+         put true into sAuthorizationRequested
       end if
    end if
 
@@ -882,7 +842,7 @@ command urlCallback pUrl, pStatus
    if tCurrentFileSizeSet is TRUE then
       if pStatus is "downloaded" or pStatus is "uploaded" then
          put true into tEndPos
-         doProgress sCurrentFileSize, tProgressInterval, lBarName, sCurrentFileSize, tEndPos -- tProgressInterval NOT USED
+         doProgress sCurrentFileSize, tProgressInterval, sBarName, sCurrentFileSize, tEndPos -- tProgressInterval NOT USED
       end if
    end if
 end urlCallback
@@ -1066,9 +1026,9 @@ private command prepareProgress pBarName pCallback
    end if
 
    if pBarName is empty then
-      put "upDownloadProgBar" into lBarName
+      put "upDownloadProgBar" into sBarName
    else
-      put pBarName into lBarName
+      put pBarName into sBarName
    end if
 
    set the cursor to busy

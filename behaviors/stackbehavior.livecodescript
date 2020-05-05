@@ -174,6 +174,541 @@ end wdlSet
 
 
 /*----------------------------------------------------------------------
+--| FUNCTION wdlGetserverMethods
+--|
+--| Author: rabit
+--| Version:  1.0
+--| Created: 2020-05-04
+--| Last Mod: 2020-05-04
+--| Requires: _wdlExecute()
+--|
+--| Summary: Get comma delimited list of server methods.
+--|
+--| Format:  wdlGetserverMethods(param)
+--|
+--| Parameters: integer <pReqID>
+--|
+--| Return: string
+----------------------------------------------------------------------*/
+
+function wdlGetserverMethods pReqID
+   local tServerMethods
+
+   put "OPTIONS" into sWebDavPoolA[pReqID]["method"]
+   put "wdlGetserverMethods" into sWebDavPoolA[pReqID]["requestHandler"]
+
+   # REQUEST
+   put _wdlExecute(pReqID) into tServerMethods
+
+   return tServerMethods
+end wdlGetserverMethods
+
+
+
+
+/*----------------------------------------------------------------------
+--| FUNCTION wdlGetFileProps
+--|
+--| Author: rabit
+--| Version:  1.0
+--| Created: 2020-05-04
+--| Last Mod: 2020-05-04
+--| Requires: wdlPropertyNamesXMLdata(), _wdlExecute()
+--|
+--| Summary: Get array of file properties.
+--|
+--| Format:  wdlGetFileProps(param1, param2)
+--|
+--| Parameters: integer <pReqID>, string <pProps>
+--|
+--| Return: mixed
+----------------------------------------------------------------------*/
+
+function wdlGetFileProps pReqID pProps
+   local tFileProps
+
+   put "PROPFIND" into sWebDavPoolA[pReqID]["method"]
+   put "wdlGetFileProps" into sWebDavPoolA[pReqID]["requestHandler"]
+   put pProps into sWebDavPoolA[pReqID]["props"]
+
+   # BUILD PROPERTY XML DATA
+   put FALSE into tCustomProps
+   put wdlPropertyNamesXMLdata(pProps, tCustomProps) into tPropsXML
+
+   put tPropsXML into sWebDavPoolA[pReqID]["propertiesXML"]
+   put "application/xml; charset=" & quote & "utf-8" & quote into tContType
+   put tContType into sWebDavPoolA[pReqID]["contentType"]
+
+   # REQUEST
+   put _wdlExecute(pReqID) into tFilePropsA
+
+   return tFilePropsA
+end wdlGetFileProps
+
+
+
+
+
+/*----------------------------------------------------------------------
+--| FUNCTION wdlGetFile
+--|
+--| Author: rabit
+--| Version:  1.0
+--| Created: 2020-05-04
+--| Last Mod: 2020-05-04
+--| Requires: _wdlExecute()
+--|
+--| Summary: Download file.
+--|
+--| Format:  wdlGetFile(param)
+--|
+--| Parameters: integer <pReqID>
+--|
+--| Return: mixed
+----------------------------------------------------------------------*/
+
+function wdlGetFile pReqID
+   local tData
+
+   put "GET" into sWebDavPoolA[pReqID]["method"]
+   put "wdlGetFile" into sWebDavPoolA[pReqID]["requestHandler"]
+
+   # REQUEST
+   put _wdlExecute(pReqID) into tData
+
+   return tData
+end wdlGetFile
+
+
+
+
+
+/*----------------------------------------------------------------------
+--| FUNCTION wdlWritePermission
+--|
+--| Author: rabit
+--| Version:  1.0
+--| Created: 2020-05-05
+--| Last Mod: 2020-05-05
+--| Requires: _wdlExecute()
+--|
+--| Summary: Write permission test.
+--|
+--| Format:  wdlWritePermission(param)
+--|
+--| Parameters: integer <pReqID>
+--|
+--| Return: string
+----------------------------------------------------------------------*/
+
+function wdlWritePermission pReqID
+   local tFile, tContType, tDataToUpload, tResponse
+
+   put "PUT" into sWebDavPoolA[pReqID]["method"]
+   put "wdlWritePermission" into sWebDavPoolA[pReqID]["requestHandler"]
+
+   put "writeTest.txt" into tFile
+   put sWebDavPoolA[pReqID]["uri"] & tFile into sWebDavPoolA[pReqID]["uri"]
+
+   put "text/plain" into tContType
+   put tContType into sWebDavPoolA[pReqID]["contentType"]
+
+   # SIZE OF FILE TO UPLOAD
+   put 4 into tFileSize -- 4 BYTES FOR WORD "test"
+   put tFileSize into sWebDavPoolA[pReqID]["contentLength"]
+   put "test" into tDataToUpload
+   put tDataToUpload into sWebDavPoolA[pReqID]["dataToUpload"]
+
+   # REQUEST
+   put _wdlExecute(pReqID) into tResponse
+
+   return tResponse
+end wdlWritePermission
+
+
+
+
+
+/*----------------------------------------------------------------------
+--| FUNCTION wdlDeleteFileFolder
+--|
+--| Author: rabit
+--| Version:  1.0
+--| Created: 2020-05-05
+--| Last Mod: 2020-05-05
+--| Requires: _wdlExecute()
+--|
+--| Summary: Delete file or folder.
+--|
+--| Format:  wdlDeleteFileFolder(param)
+--|
+--| Parameters: integer <pReqID>
+--|
+--| Return: string
+----------------------------------------------------------------------*/
+
+function wdlDeleteFileFolder pReqID
+   local tResponse
+
+   put "DELETE" into sWebDavPoolA[pReqID]["method"]
+   put "wdlDeleteFileFolder" into sWebDavPoolA[pReqID]["requestHandler"]
+
+   # REQUEST
+   put _wdlExecute(pReqID) into tResponse
+
+   return tResponse
+end wdlDeleteFileFolder
+
+
+
+
+
+/*----------------------------------------------------------------------
+--| FUNCTION wdlPutFile
+--|
+--| Author: rabit
+--| Version:  1.0
+--| Created: 2020-05-05
+--| Last Mod: 2020-05-05
+--| Requires: _wdlExecute()
+--|
+--| Summary: Upload a file.
+--|
+--| Format:  wdlPutFile(param)
+--|
+--| Parameters: integer <pReqID>
+--|
+--| Return: string
+----------------------------------------------------------------------*/
+
+function wdlPutFile pReqID
+   local tContType, tDataToUpload, tResponse
+
+   put "PUT" into sWebDavPoolA[pReqID]["method"]
+   put "wdlPutFile" into sWebDavPoolA[pReqID]["requestHandler"]
+
+   put "application/x-www-form-urlencoded" into tContType
+   put tContType into sWebDavPoolA[pReqID]["contentType"]
+
+   put URL ("binfile:" & sWebDavPoolA[pReqID]["filePath"]) into tDataToUpload
+   put tDataToUpload into sWebDavPoolA[pReqID]["dataToUpload"]
+
+   # REQUEST
+   put _wdlExecute(pReqID) into tResponse
+
+   return tResponse
+end wdlPutFile
+
+
+
+
+
+/*----------------------------------------------------------------------
+--| FUNCTION wdlGetFileList
+--|
+--| Author: rabit
+--| Version:  1.0
+--| Created: 2020-05-05
+--| Last Mod: 2020-05-05
+--| Requires: _wdlExecute()
+--|
+--| Summary: Get a XML directory listing.
+--|
+--| Format:  wdlGetFileList(param)
+--|
+--| Parameters: integer <pReqID>
+--|
+--| Return: string
+----------------------------------------------------------------------*/
+
+function wdlGetFileList pReqID
+   local tContType, tFileListXML
+
+   put "PROPFIND" into sWebDavPoolA[pReqID]["method"]
+   put "wdlGetFileList" into sWebDavPoolA[pReqID]["requestHandler"]
+
+   put empty into sWebDavPoolA[pReqID]["propertiesXML"]
+   put "application/xml; charset=" & quote & "utf-8" & quote into tContType
+   put tContType into sWebDavPoolA[pReqID]["contentType"]
+
+   # REQUEST
+   put _wdlExecute(pReqID) into tFileListXML
+
+   return tFileListXML
+end wdlGetFileList
+
+
+
+
+
+/*----------------------------------------------------------------------
+--| FUNCTION wdlCreateFolder
+--|
+--| Author: rabit
+--| Version:  1.0
+--| Created: 2020-05-05
+--| Last Mod: 2020-05-05
+--| Requires: _wdlExecute()
+--|
+--| Summary: Create folder on webDAV server.
+--|
+--| Format:  wdlCreateFolder(param)
+--|
+--| Parameters: integer <pReqID>
+--|
+--| Return: string
+----------------------------------------------------------------------*/
+
+function wdlCreateFolder pReqID
+   local tResponse
+
+   put "MKCOL" into sWebDavPoolA[pReqID]["method"]
+   put "wdlCreateFolder" into sWebDavPoolA[pReqID]["requestHandler"]
+
+   # REQUEST
+   put _wdlExecute(pReqID) into tResponse
+
+   return tResponse
+end wdlCreateFolder
+
+
+
+
+/*----------------------------------------------------------------------
+--| FUNCTION wdlSetFileProps
+--|
+--| Author: rabit
+--| Version:  1.0
+--| Created: 2020-05-05
+--| Last Mod: 2020-05-05
+--| Requires: wdlSetRemovePropXMLdata(), _wdlExecute()
+--|
+--| Summary: Set file properties.
+--|
+--| Format:  wdlSetFileProps(param1, param2, param3)
+--|
+--| Parameters: integer <pReqID>, array <pSetPropsA>, array <pRemovePropsA>
+--|
+--| Return: string
+----------------------------------------------------------------------*/
+
+function wdlSetFileProps pReqID pSetPropsA pRemovePropsA
+   local tPropsXML, tContType, tContLength, tResponse
+
+   # CHECK PROPERTIES TO SET OR REMOVE
+   if (pSetPropsA is empty and pSetPropsA is not an array) and (pRemovePropsA is empty and pRemovePropsA is not an array) then
+      answer error "Properties list empty!"
+      exit to top
+   end if
+
+   if pSetPropsA is not empty and pSetPropsA is not an array then
+      answer error "Set properties list is not an array!"
+      exit to top
+   end if
+
+   if pRemovePropsA is not empty and pRemovePropsA is not an array then
+      answer error "Remove properties list is not an array!"
+      exit to top
+   end if
+   #
+
+   put "PROPPATCH" into sWebDavPoolA[pReqID]["method"]
+   put "wdlSetFileProps" into sWebDavPoolA[pReqID]["requestHandler"]
+
+   # BUILD PROPERTY XML DATA
+   put wdlSetRemovePropXMLdata(pSetPropsA, pRemovePropsA) into tPropsXML
+
+   put tPropsXML into sWebDavPoolA[pReqID]["propertiesXML"]
+   put "application/xml; charset=" & quote & "utf-8" & quote into tContType
+   put tContType into sWebDavPoolA[pReqID]["contentType"]
+   put the number of chars of tPropsXML into tContLength
+   put tContLength into sWebDavPoolA[pReqID]["contentLength"]
+
+   # REQUEST
+   put _wdlExecute(pReqID) into tResponse
+
+   return tResponse
+end wdlSetFileProps
+
+
+
+
+
+/*----------------------------------------------------------------------
+--| FUNCTION wdlGetCustomProps
+--|
+--| Author: rabit
+--| Version:  1.0
+--| Created: 2020-05-05
+--| Last Mod: 2020-05-05
+--| Requires: wdlPropertyNamesXMLdata(), _wdlExecute()
+--|
+--| Summary: Get custom properties.
+--|
+--| Format:  wdlGetCustomProps(param1, param2)
+--|
+--| Parameters: integer <pReqID>, string <pProps> (comma delimited list)
+--|
+--| Return: string
+----------------------------------------------------------------------*/
+
+function wdlGetCustomProps pReqID pProps
+   local tFileProps, tPropsXML, tContType, tFilePropsA
+
+   put "PROPFIND" into sWebDavPoolA[pReqID]["method"]
+   put "wdlGetCustomProps" into sWebDavPoolA[pReqID]["requestHandler"]
+   put pProps into sWebDavPoolA[pReqID]["props"]
+
+   # BUILD PROPERTY XML DATA
+   put TRUE into tCustomProps
+   put wdlPropertyNamesXMLdata(pProps, tCustomProps) into tPropsXML
+
+   put tPropsXML into sWebDavPoolA[pReqID]["propertiesXML"]
+   put "application/xml; charset=" & quote & "utf-8" & quote into tContType
+   put tContType into sWebDavPoolA[pReqID]["contentType"]
+
+   # REQUEST
+   put _wdlExecute(pReqID) into tFilePropsA
+
+   return tFilePropsA
+end wdlGetCustomProps
+
+
+
+
+
+/*----------------------------------------------------------------------
+--| FUNCTION wdlLock
+--|
+--| Author: rabit
+--| Version:  1.0
+--| Created: 2020-05-05
+--| Last Mod: 2020-05-05
+--| Requires: _wdlExecute()
+--|
+--| Summary: Lock file on webDAV server.
+--|
+--| Format:  wdlLock(param)
+--|
+--| Parameters: integer <pReqID>
+--|
+--| Return: string
+----------------------------------------------------------------------*/
+
+function wdlLock pReqID
+   local tScope, tType, tResponse
+
+   put "exclusive" into tScope
+   put "write" into tType
+
+   put "LOCK" into sWebDavPoolA[pReqID]["method"]
+   put "wdlLock" into sWebDavPoolA[pReqID]["requestHandler"]
+
+   put "application/xml; charset=" & quote & "utf-8" & quote into sWebDavPoolA[pReqID]["contentType"]
+   put tScope into sWebDavPoolA[pReqID]["lockScope"]
+   put tType into sWebDavPoolA[pReqID]["lockType"]
+
+   # REQUEST
+   put _wdlExecute(pReqID) into tResponse
+
+   put "Lock token:" && the cCurrentLockToken of stack "WebDavLib" & return before tResponse
+
+   return tResponse
+end wdlLock
+
+
+
+
+
+/*----------------------------------------------------------------------
+--| FUNCTION wdlUnlock
+--|
+--| Author: rabit
+--| Version:  1.0
+--| Created: 2020-05-05
+--| Last Mod: 2020-05-05
+--| Requires: _wdlExecute()
+--|
+--| Summary: Unlock file on webDAV server.
+--|
+--| Format:  wdlUnlock(param)
+--|
+--| Parameters: integer <pReqID>
+--|
+--| Return: string
+----------------------------------------------------------------------*/
+
+function wdlUnlock pReqID
+   local tToken, tResponse
+
+   if sWebDavPoolA[pReqID]["lockToken"] <> empty then
+      set the cCurrentLockToken of stack "WebDavLib" to sWebDavPoolA[pReqID]["lockToken"]
+   end if
+
+   put the cCurrentLockToken of stack "WebDavLib" into tToken
+
+   if tToken is not empty then
+      if sWebDavPoolA[pReqID]["lockToken"] is empty then
+         put tToken into sWebDavPoolA[pReqID]["lockToken"]
+      end if
+
+      put "UNLOCK" into sWebDavPoolA[pReqID]["method"]
+      put "wdlUnlock" into sWebDavPoolA[pReqID]["requestHandler"]
+
+      # REQUEST
+      put _wdlExecute(pReqID) into tResponse
+
+      if "204" is in tResponse then
+         # SUCCESS, GET RID OF LOCK TOKEN
+         set the cCurrentLockToken of stack "WebDavLib" to empty
+      end if
+
+      return tResponse
+   else
+      answer error "File" && sWebDavPoolA[pReqID]["uri"] && "is not locked!"
+   end if
+end wdlUnlock
+
+
+
+
+
+/*----------------------------------------------------------------------
+--| FUNCTION wdlGetFileHeaders
+--|
+--| Author: rabit
+--| Version:  1.0
+--| Created: 2020-05-05
+--| Last Mod: 2020-05-05
+--| Requires: _wdlExecute()
+--|
+--| Summary: Get all headers of a file.
+--|
+--| Format:  wdlGetFileHeaders(param)
+--|
+--| Parameters: integer <pReqID>
+--|
+--| Return: array
+----------------------------------------------------------------------*/
+
+function wdlGetFileHeaders pReqID
+   local tHeaderValuesA
+
+   put "HEAD" into sWebDavPoolA[pReqID]["method"]
+   put "wdlGetFileHeader" into sWebDavPoolA[pReqID]["requestHandler"]
+
+   # REQUEST
+   put _wdlExecute(pReqID) into tHeaderValuesA
+
+   return tHeaderValuesA
+end wdlGetFileHeaders
+
+
+
+
+
+
+/*----------------------------------------------------------------------
 --| COMMAND wdlSetupNewRequest
 --|
 --| Author: rabit
@@ -447,9 +982,9 @@ end _wdlRequestResponse
 --| COMMAND _wdlWriteLog
 --|
 --| Author: rabit
---| Version:  1.1
+--| Version:  1.2
 --| Created: 2008-06-09
---| Last Mod: 2020-03-26
+--| Last Mod: 2020-04-30
 --| Requires: --
 --|
 --| Summary: Write to log field in stack sLogTarget
@@ -463,13 +998,13 @@ end _wdlRequestResponse
 ----------------------------------------------------------------------*/
 
 command _wdlWriteLog pReqID pResponse
-   local tRexEx, tSocketToOpen, tCurrentRequest
+   local tRegEx, tSocketToOpen, tCurrentRequest
 
    if sLogTargetExists then
       if sWebDavPoolA[pReqID]["socketToOpen"] is empty then
-         put "^" & sWebDavPoolA[pReqID]["host"] into tRexEx
+         put "^" & sWebDavPoolA[pReqID]["host"] into tRegEx
          repeat for each line tSocket in the openSockets
-            if matchText(tSocket, tRexEx) then
+            if matchText(tSocket, tRegEx) then
                put tSocket into sWebDavPoolA[pReqID]["socketToOpen"]
                exit repeat
             end if
@@ -550,10 +1085,10 @@ end _wdlSetErrorOrDoneStatus
 --| FUNCTION _wdlProcessResponse
 --|
 --| Author: rabit
---| Version:  1.3
+--| Version:  1.5
 --| Created: 2008-05-19
---| Last Mod: 2020-03-26
---| Requires: --
+--| Last Mod: 2020-05-05
+--| Requires: _wdlPropertyVals()
 --|
 --| Summary: Process data from server response.
 --|
@@ -570,7 +1105,7 @@ private function _wdlProcessResponse pReqID, pServerResponse
    # PROCESS THE RETURNED DATA
    switch sWebDavPoolA[pReqID]["method"]
       case "OPTIONS"
-         if matchtext(line 1 of pServerResponse, ".*2\d{2}.*") then -- STATUS CODE 2xx
+         if matchtext(pServerResponse, ".*2\d{2}.*") then -- STATUS CODE 2xx
             # SUCCESS
             replace ": " with numToCodepoint(4) in pServerResponse
             delete line 1 of pServerResponse
@@ -590,7 +1125,7 @@ private function _wdlProcessResponse pReqID, pServerResponse
 
          break
       case "PUT"
-         if matchtext(line 1 of pServerResponse, ".*2\d{2}.*") then -- STATUS CODE 2xx
+         if matchtext(pServerResponse, ".*2\d{2}.*") then -- STATUS CODE 2xx
             # SUCCESS
             put "file uploaded" into tDataToReturn
          else
@@ -599,7 +1134,7 @@ private function _wdlProcessResponse pReqID, pServerResponse
 
          break
       case "DELETE"
-         if matchtext(line 1 of pServerResponse, ".*2\d{2}.*") then -- STATUS CODE 2xx
+         if matchtext(pServerResponse, ".*2\d{2}.*") then -- STATUS CODE 2xx
             # SUCCESS
             put "file/folder deleted" into tDataToReturn
          else
@@ -608,7 +1143,11 @@ private function _wdlProcessResponse pReqID, pServerResponse
 
          break
       case "PROPFIND"
-         put pServerResponse into tDataToReturn
+         if sWebDavPoolA[pReqID]["props"] <> empty then
+            put _wdlPropertyVals(sWebDavPoolA[pReqID]["props"], pServerResponse) into tDataToReturn
+         else
+            put pServerResponse into tDataToReturn
+         end if
 
          break
       case "PROPPATCH"
@@ -616,7 +1155,7 @@ private function _wdlProcessResponse pReqID, pServerResponse
 
          break
       case "HEAD"
-         if matchtext(line 1 of pServerResponse, ".*2\d{2}.*") then -- STATUS CODE 2xx
+         if matchtext(pServerResponse, ".*2\d{2}.*") then -- STATUS CODE 2xx
             # SUCCESS
             replace ": " with numToCodepoint(4) in pServerResponse
             delete line 1 of pServerResponse
@@ -639,25 +1178,25 @@ end _wdlProcessResponse
 
 
 /*----------------------------------------------------------------------
---| FUNCTION wdlExecute
+--| FUNCTION _wdlExecute
 --|
 --| Author: rabit
---| Version:  1.2
+--| Version:  1.3
 --| Created: 2008-05-19
---| Last Mod: 2020-03-04
+--| Last Mod: 2020-05-04
 --| Requires: _wdlCheckLogTarget, _wdlCustomHeaders(), _wdlWriteStatus
 --|          _wdlAuthBasicRequest(), _wdlRequestResponse(), _wdlProcessResponse(), _wdlWriteError
 --|
 --| Summary: Execute a request and get the result(s).
 --|
---| Format:  wdlExecute(param1)
+--| Format:  _wdlExecute(param1)
 --|
 --| Parameters: integer <pReqID>
 --|
 --| Return: string
 ----------------------------------------------------------------------*/
 
-function wdlExecute pReqID
+private function _wdlExecute pReqID
    local tRequestHeadersA, tRequestHeaders, tRequestHeadersXML, tMethods, tSocketID
    local tRequestHeadersTemp, tRequestResponse, tErrorString, tServerResponse
    local tAuthTypeLineNum, tAuthResponseText, tNonce, tQop, tOpaque
@@ -740,7 +1279,6 @@ function wdlExecute pReqID
 
          wait 100 millisecs with messages
          _wdlWriteStatus pReqID, "done"
-         _wdlCleanUp pReqID
 
          # BAD REQUEST
          if "400" is in line 1 of sWebDavPoolA[pReqID]["HTTPresponse"] then
@@ -751,6 +1289,13 @@ function wdlExecute pReqID
          end if
          #
 
+         if sWebDavPoolA[pReqID]["method"] is "PROPFIND" then
+            put _wdlProcessResponse(pReqID, sWebDavPoolA[pReqID]["HTTPresponse"]) into tRequestedDataA
+            _wdlCleanUp pReqID
+            return tRequestedDataA
+         end if
+
+         _wdlCleanUp pReqID
          return sWebDavPoolA[pReqID]["HTTPresponse"]
       end if
 
@@ -989,6 +1534,13 @@ function wdlExecute pReqID
 
                wait 100 millisecs with messages
                _wdlWriteStatus pReqID, "done"
+
+               if sWebDavPoolA[pReqID]["method"] is "PROPFIND" then
+                  put _wdlProcessResponse(pReqID, sWebDavPoolA[pReqID]["HTTPresponse"]) into tRequestedDataA
+                  _wdlCleanUp pReqID
+                  return tRequestedDataA
+               end if
+
                _wdlCleanUp pReqID
 
                return sWebDavPoolA[pReqID]["HTTPresponse"]
@@ -1030,7 +1582,7 @@ function wdlExecute pReqID
       end if -- if "401" is in line 1 of tRequestResponse
 
    end if -- if sWebDavPoolA[pReqID]["authType"] is "BASIC"
-end wdlExecute
+end _wdlExecute
 
 
 
@@ -1565,48 +2117,71 @@ end wdlPropertyNamesXMLdata
 
 
 /*----------------------------------------------------------------------
---| FUNCTION wdlPropertyVals
+--| FUNCTION _wdlPropertyVals
 --|
 --| Author: rabit
---| Version:  1.0
+--| Version:  1.1
 --| Created: 2020-02-26
---| Last Mod: --
+--| Last Mod: 2020-05-04
 --| Requires: --
 --|
 --| Summary: Get value(s) of a specific property in XML response data.
 --|
---| Format:  wdlPropertyVals(param1, param2)
+--| Format:  _wdlPropertyVals(param1, param2)
 --|
 --| Parameters: string <pProp>, string <pFilePropValues> (XML response)
 --|
 --| Return: string
 ----------------------------------------------------------------------*/
 
-function wdlPropertyVals pProp pFilePropValues
-   local tPropLineNum, tPropLine, tPropValue, tTheResult
+private function _wdlPropertyVals pProps pFilePropValues
+   local tPropLineNum, tFilePropValues, tProp, tPropLine
+   local tPropValue, tOpaqueTokenLineNum, tTokenLine
+   local tOpaqueToken, tTheResultA
 
-   put empty into tPropLineNum
+   repeat for each item tProp in pProps
+      put empty into tPropLineNum
+      put pFilePropValues into tFilePropValues
 
-   repeat until tPropLineNum is 0
-      put lineOffset(pProp & ">", pFilePropValues) into tPropLineNum
+      repeat until tPropLineNum is 0
+         put lineOffset(tProp & ">", tFilePropValues) into tPropLineNum
 
-      if tPropLineNum <> 0 then
-         put line tPropLineNum of pFilePropValues into tPropLine
-         get matchText(tPropLine, "(?U)<.*" & pProp & ".*>(.*)</" , tPropValue)
-         if it is true then
-            put pProp & ":" && tPropValue & return after tTheResult
+         if tPropLineNum <> 0 then
+            put line tPropLineNum of tFilePropValues into tPropLine
+
+            if tProp is "lockdiscovery" then
+               get matchText(tPropLine, "(?U)<.*lockdiscovery.*><.*:(.*)>" , tPropValue)
+            else
+               get matchText(tPropLine, "(?U)<.*" & tProp & ".*>(.*)</" , tPropValue)
+            end if -- if tProp is "lockdiscovery"
+
+            if it is true then
+               if tProp is "lockdiscovery" then
+                  # GET LOCK TOKEN
+                  put lineOffset(">opaquelocktoken:", tFilePropValues) into tOpaqueTokenLineNum
+                  put line tOpaqueTokenLineNum of tFilePropValues into tTokenLine
+                  get matchText(tTokenLine, "(?U).*>(opaquelocktoken:.*)<.*>" , tOpaqueToken)
+                  put tPropValue & return & "lock token:" && "<" & tOpaqueToken & ">" into tTheResultA[tProp]
+               else
+                  put tPropValue into tTheResultA[tProp]
+               end if
+            else
+               put "Property value not found!" into tTheResultA[tProp]
+            end if -- if it is true
          else
-            put pProp & ":" && "property value not found" & return after tTheResult
-         end if
-      else
-         return tTheResult
-      end if
+            exit repeat
+         end if -- if tPropLineNum <> 0
 
-      put line tPropLineNum + 1 to -1 of pFilePropValues into pFilePropValues
+         if tProp is "lockdiscovery" then
+            exit repeat
+         end if
+
+         put line tPropLineNum + 1 to -1 of tFilePropValues into tFilePropValues
+      end repeat
    end repeat
 
-   return tTheResult
-end wdlPropertyVals
+   return tTheResultA
+end _wdlPropertyVals
 
 
 
@@ -1775,9 +2350,9 @@ end _wdlResponseToReturn
 --| FUNCTION _wdlCustomHeaders
 --|
 --| Author: rabit
---| Version:  1.0
+--| Version:  1.1
 --| Created: 2020-04-01
---| Last Mod: --
+--| Last Mod: 2020-05-05
 --| Requires: --
 --|
 --| Summary: Build custom headers.
@@ -1847,7 +2422,11 @@ private function _wdlCustomHeaders pReqID
 
          # FOR DIRECTORY LISTINGS ADD DEPTH
          if ("resourcetype" is in sWebDavPoolA[pReqID]["propertiesXML"]) or (sWebDavPoolA[pReqID]["propertiesXML"] is empty) then
-            put return & "Depth:" && the cDepth of stack "WebDavLib" after tHeaders
+           if sWebDavPoolA[pReqID]["depth"] is an integer then
+             put return & "Depth:" && sWebDavPoolA[pReqID]["depth"] after tHeaders
+           else
+             put return & "Depth:" && the cDepth of stack "WebDavLib" after tHeaders
+           end if
          end if
 
          if sWebDavPoolA[pReqID]["propertiesXML"] is empty then
