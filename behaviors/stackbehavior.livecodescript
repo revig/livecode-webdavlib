@@ -1051,9 +1051,9 @@ end _wdlSetErrorOrDoneStatus
 --| FUNCTION _wdlProcessResponse
 --|
 --| Author: rabit
---| Version:  1.4
+--| Version:  1.5
 --| Created: 2008-05-19
---| Last Mod: 2020-05-04
+--| Last Mod: 2020-05-05
 --| Requires: _wdlPropertyVals()
 --|
 --| Summary: Process data from server response.
@@ -1071,7 +1071,7 @@ private function _wdlProcessResponse pReqID, pServerResponse
    # PROCESS THE RETURNED DATA
    switch sWebDavPoolA[pReqID]["method"]
       case "OPTIONS"
-         if matchtext(line 1 of pServerResponse, ".*2\d{2}.*") then -- STATUS CODE 2xx
+         if matchtext(pServerResponse, ".*2\d{2}.*") then -- STATUS CODE 2xx
             # SUCCESS
             replace ": " with numToCodepoint(4) in pServerResponse
             delete line 1 of pServerResponse
@@ -1091,7 +1091,7 @@ private function _wdlProcessResponse pReqID, pServerResponse
 
          break
       case "PUT"
-         if matchtext(line 1 of pServerResponse, ".*2\d{2}.*") then -- STATUS CODE 2xx
+         if matchtext(pServerResponse, ".*2\d{2}.*") then -- STATUS CODE 2xx
             # SUCCESS
             put "file uploaded" into tDataToReturn
          else
@@ -1100,7 +1100,7 @@ private function _wdlProcessResponse pReqID, pServerResponse
 
          break
       case "DELETE"
-         if matchtext(line 1 of pServerResponse, ".*2\d{2}.*") then -- STATUS CODE 2xx
+         if matchtext(pServerResponse, ".*2\d{2}.*") then -- STATUS CODE 2xx
             # SUCCESS
             put "file/folder deleted" into tDataToReturn
          else
@@ -1121,7 +1121,7 @@ private function _wdlProcessResponse pReqID, pServerResponse
 
          break
       case "HEAD"
-         if matchtext(line 1 of pServerResponse, ".*2\d{2}.*") then -- STATUS CODE 2xx
+         if matchtext(pServerResponse, ".*2\d{2}.*") then -- STATUS CODE 2xx
             # SUCCESS
             replace ": " with numToCodepoint(4) in pServerResponse
             delete line 1 of pServerResponse
