@@ -442,6 +442,40 @@ end wdlGetFileList
 
 
 /*----------------------------------------------------------------------
+--| FUNCTION wdlCreateFolder
+--|
+--| Author: rabit
+--| Version:  1.0
+--| Created: 2020-05-05
+--| Last Mod: 2020-05-05
+--| Requires: --
+--|
+--| Summary: Create folder on webDAV server.
+--|
+--| Format:  wdlCreateFolder(param)
+--|
+--| Parameters: integer <pReqID>
+--|
+--| Return: string
+----------------------------------------------------------------------*/
+
+function wdlCreateFolder pReqID
+   local tResponse
+
+   put "MKCOL" into sWebDavPoolA[pReqID]["method"]
+   put "wdlCreateFolder" into sWebDavPoolA[pReqID]["requestHandler"]
+
+   # REQUEST
+   put wdlExecute(pReqID) into tResponse
+
+   return tResponse
+end wdlCreateFolder
+
+
+
+
+
+/*----------------------------------------------------------------------
 --| COMMAND wdlSetupNewRequest
 --|
 --| Author: rabit

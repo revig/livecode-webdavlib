@@ -478,7 +478,8 @@ end deleteFolder
 ----------------------------------
 
 command createFolder
-   local tFolder, tRequestDataA, tReqID
+   local tFolder, tCallback, tRequestDataA, tReqID
+   local tServerResponse
 
    put fld "davDirFld" & "testFolder/" into tFolder
 
@@ -487,16 +488,25 @@ command createFolder
    put FALSE into tCallback
    put commonSettings(tCallback) into tRequestDataA
 
-   put "MKCOL" into tRequestDataA["method"]
    put tFolder into tRequestDataA["uri"]
 
    wdlSetupNewRequest tRequestDataA
    put the result into tReqID
 
    # REQUEST
-   get wdlExecute(tReqID)
+   put wdlCreateFolder(tReqID) into tServerResponse
 
-   put it
+   if tServerResponse contains "Error" then
+      put cr & cr & tServerResponse after fld "errorFld"
+   else
+      # SUCCESS
+      if "201" is in line 1 of tServerResponse then
+         put "Request ID" && tReqID & ": created" & cr after fld "statusFld"
+      end if
+   end if -- if tServerResponse contains "Error"
+
+   put "Create folder response:" && tServerResponse
+
    wdlCleanup tReqID
 end createFolder
 
