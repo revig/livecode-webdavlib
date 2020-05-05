@@ -427,10 +427,8 @@ end deleteFile
 
 
 
-
-
 function deleteFileFolder pFileFolder
-   local tRequestDataA, tReqID, tServerResponse
+   libUrlSetStatusCallback
 
    if sKeepLogData <> TRUE then
       prepareLogFields
@@ -442,31 +440,38 @@ function deleteFileFolder pFileFolder
    put FALSE into tCallback
    put commonSettings(tCallback) into tRequestDataA
 
-   put "DELETE" into tRequestDataA["method"]
    put pFileFolder into tRequestDataA["uri"]
 
    wdlSetupNewRequest tRequestDataA
    put the result into tReqID
 
-   # REQUEST
-   put wdlExecute(tReqID) into tServerResponse
+   put wdlDeleteFileFolder(tReqID) into tServerResponse
 
-   wdlCleanup tReqID
-
-   # RESPONSE
-   if tServerResponse contains "Error" then
-      put cr & cr & tServerResponse after fld "errorFld"
-   end if
    return tServerResponse
 end deleteFileFolder
 
 
 
+
 command deleteFolder
-   local tFolder
+   local tFolder, tServerResponse
 
    put fld "davDirFld" & "testFolder/" into tFolder
-   put deleteFileFolder(tFolder)
+
+   put deleteFileFolder(tFolder) into tServerResponse
+
+   if tServerResponse contains "Error" then
+      put cr & cr & tServerResponse after fld "errorFld"
+   else
+      # SUCCESS
+      if "204" is in line 1 of tServerResponse then
+         put "Request ID" && tReqID & ": deleted" & cr after fld "statusFld"
+      end if
+   end if -- if tServerResponse contains "Error"
+
+   put "Delete response:" && tServerResponse
+
+   wdlCleanup tReqID
 end deleteFolder
 
 ----------------------------------
