@@ -364,6 +364,46 @@ end wdlDeleteFileFolder
 
 
 /*----------------------------------------------------------------------
+--| FUNCTION wdlPutFile
+--|
+--| Author: rabit
+--| Version:  1.0
+--| Created: 2020-05-05
+--| Last Mod: 2020-05-05
+--| Requires: wdlExecute()
+--|
+--| Summary: Upload a file.
+--|
+--| Format:  wdlPutFile(param)
+--|
+--| Parameters: integer <pReqID>
+--|
+--| Return: string
+----------------------------------------------------------------------*/
+
+function wdlPutFile pReqID
+   local tContType, tDataToUpload, tResponse
+
+   put "PUT" into sWebDavPoolA[pReqID]["method"]
+   put "wdlPutFile" into sWebDavPoolA[pReqID]["requestHandler"]
+
+   put "application/x-www-form-urlencoded" into tContType
+   put tContType into sWebDavPoolA[pReqID]["contentType"]
+
+   put URL ("binfile:" & sWebDavPoolA[pReqID]["filePath"]) into tDataToUpload
+   put tDataToUpload into sWebDavPoolA[pReqID]["dataToUpload"]
+
+   # REQUEST
+   put wdlExecute(pReqID) into tResponse
+
+   return tResponse
+end wdlPutFile
+
+
+
+
+
+/*----------------------------------------------------------------------
 --| COMMAND wdlSetupNewRequest
 --|
 --| Author: rabit

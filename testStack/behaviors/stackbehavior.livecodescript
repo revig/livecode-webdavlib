@@ -349,47 +349,30 @@ end checkWritePermission
 
 
 command uploadFile
-   local tUploadFilePath, tIdentNum, tIdent
+   local tFilePath, tFile
 
-   put fld "filePathFld" into tUploadFilePath
-   put 1 into tIdentNum
+   put fld "filePathFld" into tFilePath
 
-   put tIdentNum & "-" into tIdent
-   putFile tUploadFilePath, tIdent
-end uploadFile
+   # GET SIZE OF FILE TO UPLOAD
+   getLocalFileSize tFilePath
 
-
-
-
-command putFile pFile pIdent
-   local tFile, tURI, tCallBack, tCallbackTarget, tContType
-   local tDataToUpload, tRequestDataA, tReqID, tServerResponse
-
-   ## GET SIZE OF FILE TO UPLOAD
-   getLocalFileSize pFile
+   set the itemdelimiter to "/"
+   put last item of tFilePath into tFile
 
    prepareLogFields
 
    put TRUE into tCallback
    put commonSettings(tCallback) into tRequestDataA
 
-   put "PUT" into tRequestDataA["method"]
+   put tFilePath into tRequestDataA["filePath"]
 
    set the itemdelimiter to "/"
-   put last item of pFile into tFile
-   if pIdent is not empty then
-      put fld "davDirFld" & pIdent & the secs & "_" & tFile into tURI
-   else
-      put fld "davDirFld" & the secs & "_" & tFile into tURI
-   end if
+   put last item of tFilePath into tFile
+   put fld "davDirFld" & the secs & "_" & tFile into tURI
    put tURI into fld "fileToDeleteFld"
    put tURI into tRequestDataA["uri"]
 
-   put "application/x-www-form-urlencoded" into tContType
-   put tContType into tRequestDataA["contentType"]
    put sCurrentFileSize into tRequestDataA["contentLength"]
-   put URL ("binfile:" & pFile) into tDataToUpload
-   put tDataToUpload into tRequestDataA["dataToUpload"]
 
    wdlSetupNewRequest tRequestDataA
    put the result into tReqID
@@ -398,22 +381,22 @@ command putFile pFile pIdent
    # AND load COMMANDS, AS WELL AS DOWNLOADS TRIGGERED BY EVALUATING AN FTP OR HTTP URL
    prepareProgress
 
-   ## REQUEST
-   put wdlExecute(tReqID) into tServerResponse
+   # REQUEST
+   put wdlPutFile(tReqID) into tServerResponse
 
-   wdlCleanup tReqID
-
-   ## RESPONSE
    if tServerResponse contains "Error" then
       put cr & cr & tServerResponse after fld "errorFld"
    else
+      # SUCCESS
       if "201" is in line 1 of tServerResponse then
          put "Request ID" && tReqID & ": created" & cr after fld "statusFld"
       end if
+   end if -- if tServerResponse contains "Error"
 
-      put tServerResponse
-   end if
-end putFile
+   put "Upload response:" && tServerResponse
+
+   wdlCleanup tReqID
+end uploadFile
 
 ---------------------------------
 
