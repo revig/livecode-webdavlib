@@ -240,23 +240,40 @@ end getProperties
 
 
 command checkLocked
-   local tFile, tNameSpace, tProps, tFileLockPropValue
+   local tFile, tProps, tRequestDataA, tReqID
+   local tFilePropValuesA, tKey, tTheResult
+
+   prepareLogFields
 
    put fld "davDirFld" & fld "remoteFileFld" into tFile
 
-   -- USE tNameSpace ONLY FOR CUSTOM PROPERTIES
-   -- put quote & the cNameSpace of this stack & quote into tNameSpace
-
-   -- CUSTOM PROPERTIES
-   -- put "authors,testTag" into tProps -- LEAVE EMPTY TO GET ALL PROPERTIES
-
    put "lockdiscovery" into tProps
 
-   put getFileProps(tFile, tNameSpace, tProps) into tFileLockPropValue
-   if tFileLockPropValue contains "opaquelocktoken:" then
-      put "File:" && tFile && "is locked"
+   put FALSE into tCallback
+   put commonSettings(tCallback) into tRequestDataA
+
+   put tFile into tRequestDataA["uri"]
+
+   wdlSetupNewRequest tRequestDataA
+   put the result into tReqID
+
+   # REQUEST
+   put wdlGetFileProps(tReqID, tProps) into tFilePropValuesA
+
+   wdlCleanup tReqID
+
+   repeat for each key tKey in tFilePropValuesA
+      put tKey & ":" && tFilePropValuesA[tKey] & return after tTheResult
+   end repeat
+
+   if tTheResult is empty then
+      if the number of items of tProps is 1 then
+         put "Property not set."
+      else
+         put "Properties not set."
+      end if
    else
-      put "File:" && tFile && "is not locked"
+      put tTheResult -- & return & return & tFilePropValuesA
    end if
 end checkLocked
 
