@@ -180,7 +180,7 @@ end wdlSet
 --| Version:  1.0
 --| Created: 2020-05-04
 --| Last Mod: 2020-05-04
---| Requires: wdlExecute()
+--| Requires: _wdlExecute()
 --|
 --| Summary: Get comma delimited list of server methods.
 --|
@@ -198,7 +198,7 @@ function wdlGetserverMethods pReqID
    put "wdlGetserverMethods" into sWebDavPoolA[pReqID]["requestHandler"]
 
    # REQUEST
-   put wdlExecute(pReqID) into tServerMethods
+   put _wdlExecute(pReqID) into tServerMethods
 
    return tServerMethods
 end wdlGetserverMethods
@@ -213,7 +213,7 @@ end wdlGetserverMethods
 --| Version:  1.0
 --| Created: 2020-05-04
 --| Last Mod: 2020-05-04
---| Requires: wdlPropertyNamesXMLdata(), wdlExecute()
+--| Requires: wdlPropertyNamesXMLdata(), _wdlExecute()
 --|
 --| Summary: Get array of file properties.
 --|
@@ -240,7 +240,7 @@ function wdlGetFileProps pReqID pProps
    put tContType into sWebDavPoolA[pReqID]["contentType"]
 
    # REQUEST
-   put wdlExecute(pReqID) into tFilePropsA
+   put _wdlExecute(pReqID) into tFilePropsA
 
    return tFilePropsA
 end wdlGetFileProps
@@ -256,7 +256,7 @@ end wdlGetFileProps
 --| Version:  1.0
 --| Created: 2020-05-04
 --| Last Mod: 2020-05-04
---| Requires: wdlExecute()
+--| Requires: _wdlExecute()
 --|
 --| Summary: Download file.
 --|
@@ -274,7 +274,7 @@ function wdlGetFile pReqID
    put "wdlGetFile" into sWebDavPoolA[pReqID]["requestHandler"]
 
    # REQUEST
-   put wdlExecute(pReqID) into tData
+   put _wdlExecute(pReqID) into tData
 
    return tData
 end wdlGetFile
@@ -290,7 +290,7 @@ end wdlGetFile
 --| Version:  1.0
 --| Created: 2020-05-05
 --| Last Mod: 2020-05-05
---| Requires: wdlExecute()
+--| Requires: _wdlExecute()
 --|
 --| Summary: Write permission test.
 --|
@@ -320,7 +320,7 @@ function wdlWritePermission pReqID
    put tDataToUpload into sWebDavPoolA[pReqID]["dataToUpload"]
 
    # REQUEST
-   put wdlExecute(pReqID) into tResponse
+   put _wdlExecute(pReqID) into tResponse
 
    return tResponse
 end wdlWritePermission
@@ -336,7 +336,7 @@ end wdlWritePermission
 --| Version:  1.0
 --| Created: 2020-05-05
 --| Last Mod: 2020-05-05
---| Requires: wdlExecute()
+--| Requires: _wdlExecute()
 --|
 --| Summary: Delete file or folder.
 --|
@@ -354,7 +354,7 @@ function wdlDeleteFileFolder pReqID
    put "wdlDeleteFileFolder" into sWebDavPoolA[pReqID]["requestHandler"]
 
    # REQUEST
-   put wdlExecute(pReqID) into tResponse
+   put _wdlExecute(pReqID) into tResponse
 
    return tResponse
 end wdlDeleteFileFolder
@@ -370,7 +370,7 @@ end wdlDeleteFileFolder
 --| Version:  1.0
 --| Created: 2020-05-05
 --| Last Mod: 2020-05-05
---| Requires: wdlExecute()
+--| Requires: _wdlExecute()
 --|
 --| Summary: Upload a file.
 --|
@@ -394,7 +394,7 @@ function wdlPutFile pReqID
    put tDataToUpload into sWebDavPoolA[pReqID]["dataToUpload"]
 
    # REQUEST
-   put wdlExecute(pReqID) into tResponse
+   put _wdlExecute(pReqID) into tResponse
 
    return tResponse
 end wdlPutFile
@@ -410,7 +410,7 @@ end wdlPutFile
 --| Version:  1.0
 --| Created: 2020-05-05
 --| Last Mod: 2020-05-05
---| Requires: wdlExecute()
+--| Requires: _wdlExecute()
 --|
 --| Summary: Get a XML directory listing.
 --|
@@ -432,7 +432,7 @@ function wdlGetFileList pReqID
    put tContType into sWebDavPoolA[pReqID]["contentType"]
 
    # REQUEST
-   put wdlExecute(pReqID) into tFileListXML
+   put _wdlExecute(pReqID) into tFileListXML
 
    return tFileListXML
 end wdlGetFileList
@@ -448,7 +448,7 @@ end wdlGetFileList
 --| Version:  1.0
 --| Created: 2020-05-05
 --| Last Mod: 2020-05-05
---| Requires: wdlExecute()
+--| Requires: _wdlExecute()
 --|
 --| Summary: Create folder on webDAV server.
 --|
@@ -466,7 +466,7 @@ function wdlCreateFolder pReqID
    put "wdlCreateFolder" into sWebDavPoolA[pReqID]["requestHandler"]
 
    # REQUEST
-   put wdlExecute(pReqID) into tResponse
+   put _wdlExecute(pReqID) into tResponse
 
    return tResponse
 end wdlCreateFolder
@@ -481,7 +481,7 @@ end wdlCreateFolder
 --| Version:  1.0
 --| Created: 2020-05-05
 --| Last Mod: 2020-05-05
---| Requires: wdlSetRemovePropXMLdata(), wdlExecute()
+--| Requires: wdlSetRemovePropXMLdata(), _wdlExecute()
 --|
 --| Summary: Set file properties.
 --|
@@ -525,7 +525,7 @@ function wdlSetFileProps pReqID pSetPropsA pRemovePropsA
    put tContLength into sWebDavPoolA[pReqID]["contentLength"]
 
    # REQUEST
-   put wdlExecute(pReqID) into tResponse
+   put _wdlExecute(pReqID) into tResponse
 
    return tResponse
 end wdlSetFileProps
@@ -541,7 +541,7 @@ end wdlSetFileProps
 --| Version:  1.0
 --| Created: 2020-05-05
 --| Last Mod: 2020-05-05
---| Requires: wdlPropertyNamesXMLdata(), wdlExecute()
+--| Requires: wdlPropertyNamesXMLdata(), _wdlExecute()
 --|
 --| Summary: Get custom properties.
 --|
@@ -568,7 +568,7 @@ function wdlGetCustomProps pReqID pProps
    put tContType into sWebDavPoolA[pReqID]["contentType"]
 
    # REQUEST
-   put wdlExecute(pReqID) into tFilePropsA
+   put _wdlExecute(pReqID) into tFilePropsA
 
    return tFilePropsA
 end wdlGetCustomProps
@@ -584,7 +584,7 @@ end wdlGetCustomProps
 --| Version:  1.0
 --| Created: 2020-05-05
 --| Last Mod: 2020-05-05
---| Requires: wdlExecute()
+--| Requires: _wdlExecute()
 --|
 --| Summary: Lock file on webDAV server.
 --|
@@ -609,7 +609,7 @@ function wdlLock pReqID
    put tType into sWebDavPoolA[pReqID]["lockType"]
 
    # REQUEST
-   put wdlExecute(pReqID) into tResponse
+   put _wdlExecute(pReqID) into tResponse
 
    put "Lock token:" && the cCurrentLockToken of stack "WebDavLib" & return before tResponse
 
@@ -627,7 +627,7 @@ end wdlLock
 --| Version:  1.0
 --| Created: 2020-05-05
 --| Last Mod: 2020-05-05
---| Requires: wdlExecute()
+--| Requires: _wdlExecute()
 --|
 --| Summary: Unlock file on webDAV server.
 --|
@@ -656,7 +656,7 @@ function wdlUnlock pReqID
       put "wdlUnlock" into sWebDavPoolA[pReqID]["requestHandler"]
 
       # REQUEST
-      put wdlExecute(pReqID) into tResponse
+      put _wdlExecute(pReqID) into tResponse
 
       if "204" is in tResponse then
          # SUCCESS, GET RID OF LOCK TOKEN
@@ -680,7 +680,7 @@ end wdlUnlock
 --| Version:  1.0
 --| Created: 2020-05-05
 --| Last Mod: 2020-05-05
---| Requires: wdlExecute()
+--| Requires: _wdlExecute()
 --|
 --| Summary: Get all headers of a file.
 --|
@@ -698,7 +698,7 @@ function wdlGetFileHeaders pReqID
    put "wdlGetFileHeader" into sWebDavPoolA[pReqID]["requestHandler"]
 
    # REQUEST
-   put wdlExecute(pReqID) into tHeaderValuesA
+   put _wdlExecute(pReqID) into tHeaderValuesA
 
    return tHeaderValuesA
 end wdlGetFileHeaders
@@ -1178,7 +1178,7 @@ end _wdlProcessResponse
 
 
 /*----------------------------------------------------------------------
---| FUNCTION wdlExecute
+--| FUNCTION _wdlExecute
 --|
 --| Author: rabit
 --| Version:  1.3
@@ -1189,14 +1189,14 @@ end _wdlProcessResponse
 --|
 --| Summary: Execute a request and get the result(s).
 --|
---| Format:  wdlExecute(param1)
+--| Format:  _wdlExecute(param1)
 --|
 --| Parameters: integer <pReqID>
 --|
 --| Return: string
 ----------------------------------------------------------------------*/
 
-function wdlExecute pReqID
+private function _wdlExecute pReqID
    local tRequestHeadersA, tRequestHeaders, tRequestHeadersXML, tMethods, tSocketID
    local tRequestHeadersTemp, tRequestResponse, tErrorString, tServerResponse
    local tAuthTypeLineNum, tAuthResponseText, tNonce, tQop, tOpaque
@@ -1582,7 +1582,7 @@ function wdlExecute pReqID
       end if -- if "401" is in line 1 of tRequestResponse
 
    end if -- if sWebDavPoolA[pReqID]["authType"] is "BASIC"
-end wdlExecute
+end _wdlExecute
 
 
 
