@@ -614,32 +614,35 @@ end removeProperties
 ----------------------------------
 
 command lockFile
-   local tFile, tScope, tTimeout, tType
+   local tFile, tCallback, tOmitTsNet
    local tRequestDataA,tReqID
 
-   put fld "davDirFld" & fld "remoteFileFld" into tFile
-   put "exclusive" into tScope
-   put "write" into tType
-
    prepareLogFields
+
+   put fld "davDirFld" & fld "remoteFileFld" into tFile
 
    put FALSE into tCallback
    put commonSettings(tCallback) into tRequestDataA
 
-   put "LOCK" into tRequestDataA["method"]
    put tFile into tRequestDataA["uri"]
-   put "application/xml; charset=" & quote & "utf-8" & quote into tRequestDataA["contentType"]
-   put tScope into tRequestDataA["lockScope"]
-   put tType into tRequestDataA["lockType"]
    put "LCapp" into tRequestDataA["lockOwner"]
 
    wdlSetupNewRequest tRequestDataA
    put the result into tReqID
 
    # REQUEST
-   get wdlExecute(tReqID)
+   put wdlLock(tReqID) into tResponse
 
-   -- put it
+   if "200" is in line 2 of tResponse then
+      put "File" && tFile && "locked." & return & line 1 of tResponse into tResult
+   else
+      put "Error!" & return & tResponse into tResult
+   end if
+
+   writeStatusWDL tReqID, tResult
+
+   put tResult
+
    wdlCleanup tReqID
 end lockFile
 

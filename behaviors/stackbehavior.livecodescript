@@ -578,6 +578,49 @@ end wdlGetCustomProps
 
 
 /*----------------------------------------------------------------------
+--| FUNCTION wdlLock
+--|
+--| Author: rabit
+--| Version:  1.0
+--| Created: 2020-05-05
+--| Last Mod: 2020-05-05
+--| Requires: wdlExecute()
+--|
+--| Summary: Lock file on webDAV server.
+--|
+--| Format:  wdlLock(param)
+--|
+--| Parameters: integer <pReqID>
+--|
+--| Return: string
+----------------------------------------------------------------------*/
+
+function wdlLock pReqID
+   local tScope, tType, tResponse
+
+   put "exclusive" into tScope
+   put "write" into tType
+
+   put "LOCK" into sWebDavPoolA[pReqID]["method"]
+   put "wdlLock" into sWebDavPoolA[pReqID]["requestHandler"]
+
+   put "application/xml; charset=" & quote & "utf-8" & quote into sWebDavPoolA[pReqID]["contentType"]
+   put tScope into sWebDavPoolA[pReqID]["lockScope"]
+   put tType into sWebDavPoolA[pReqID]["lockType"]
+
+   # REQUEST
+   put wdlExecute(pReqID) into tResponse
+
+   put "Lock token:" && the cCurrentLockToken of stack "WebDavLib" & return before tResponse
+
+   return tResponse
+end wdlLock
+
+
+
+
+
+/*----------------------------------------------------------------------
 --| COMMAND wdlSetupNewRequest
 --|
 --| Author: rabit
