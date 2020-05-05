@@ -672,35 +672,38 @@ end lockFile
 ----------------------------------
 
 command unlockFile
-   local tToken, tFile, tRequestDataA, tReqID
+   local tFile, tCallback, tRequestDataA
+   local tReqID, tResponse, tResult
 
-   put the cCurrentLockToken of stack "WebDavLib" into tToken
+   prepareLogFields
 
-   if tToken is not empty then
-      put fld "davDirFld" & fld "remoteFileFld" into tFile
+   put fld "davDirFld" & fld "remoteFileFld" into tFile
 
-      prepareLogFields
+   put FALSE into tCallback
+   put commonSettings(tCallback) into tRequestDataA
 
-      put FALSE into tCallback
-      put commonSettings(tCallback) into tRequestDataA
+   # IN CASE YOU KNOW A FILE'S LOCK TOKEN
+   -- put "<theLockTokenString>" into tRequestDataA["lockToken"]
 
-      put "UNLOCK" into tRequestDataA["method"]
-      put tFile into tRequestDataA["uri"]
-      put tToken into tRequestDataA["lockToken"]
+   put tFile into tRequestDataA["uri"]
 
-      wdlSetupNewRequest tRequestDataA
-      put the result into tReqID
+   wdlSetupNewRequest tRequestDataA
+   put the result into tReqID
 
-      # REQUEST
-      get wdlExecute(tReqID)
+   # REQUEST
+   put wdlUnlock(tReqID) into tResponse
 
-      -- put it
-      wdlCleanup tReqID
-
-      set the cCurrentLockToken of stack "WebDavLib" to empty
+   if "204" is in tResponse then
+      put "File" && tFile && "unlocked." into tResult
    else
-      answer error "There are no locked files!"
+      put "Error!" & return & tResponse into tResult
    end if
+
+   writeStatusWDL tReqID, tResult
+
+   put tResult
+
+   wdlCleanup tReqID
 end unlockFile
 
 ----------------------------------

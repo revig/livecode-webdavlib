@@ -621,6 +621,60 @@ end wdlLock
 
 
 /*----------------------------------------------------------------------
+--| FUNCTION wdlUnlock
+--|
+--| Author: rabit
+--| Version:  1.0
+--| Created: 2020-05-05
+--| Last Mod: 2020-05-05
+--| Requires: wdlExecute()
+--|
+--| Summary: Unlock file on webDAV server.
+--|
+--| Format:  wdlUnlock(param)
+--|
+--| Parameters: integer <pReqID>
+--|
+--| Return: string
+----------------------------------------------------------------------*/
+
+function wdlUnlock pReqID
+   local tToken, tResponse
+
+   if sWebDavPoolA[pReqID]["lockToken"] <> empty then
+      set the cCurrentLockToken of stack "WebDavLib" to sWebDavPoolA[pReqID]["lockToken"]
+   end if
+
+   put the cCurrentLockToken of stack "WebDavLib" into tToken
+
+   if tToken is not empty then
+      if sWebDavPoolA[pReqID]["lockToken"] is empty then
+         put tToken into sWebDavPoolA[pReqID]["lockToken"]
+      end if
+
+      put "UNLOCK" into sWebDavPoolA[pReqID]["method"]
+      put "wdlUnlock" into sWebDavPoolA[pReqID]["requestHandler"]
+
+      # REQUEST
+      put wdlExecute(pReqID) into tResponse
+
+      if "204" is in tResponse then
+         # SUCCESS, GET RID OF LOCK TOKEN
+         set the cCurrentLockToken of stack "WebDavLib" to empty
+      end if
+
+      return tResponse
+   else
+      answer error "File" && sWebDavPoolA[pReqID]["uri"] && "is not locked!"
+   end if
+end wdlUnlock
+
+
+
+
+
+
+/*----------------------------------------------------------------------
 --| COMMAND wdlSetupNewRequest
 --|
 --| Author: rabit
