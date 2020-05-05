@@ -349,7 +349,8 @@ end checkWritePermission
 
 
 command uploadFile
-   local tFilePath, tFile
+  local tFilePath, tFile, tCallback, tRequestDataA
+  local tURI, tReqID, tServerResponse
 
    put fld "filePathFld" into tFilePath
 
