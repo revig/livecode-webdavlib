@@ -410,7 +410,7 @@ end wdlPutFile
 --| Version:  1.0
 --| Created: 2020-05-05
 --| Last Mod: 2020-05-05
---| Requires: --
+--| Requires: wdlExecute()
 --|
 --| Summary: Get a XML directory listing.
 --|
@@ -448,7 +448,7 @@ end wdlGetFileList
 --| Version:  1.0
 --| Created: 2020-05-05
 --| Last Mod: 2020-05-05
---| Requires: --
+--| Requires: wdlExecute()
 --|
 --| Summary: Create folder on webDAV server.
 --|
@@ -470,6 +470,108 @@ function wdlCreateFolder pReqID
 
    return tResponse
 end wdlCreateFolder
+
+
+
+
+/*----------------------------------------------------------------------
+--| FUNCTION wdlSetFileProps
+--|
+--| Author: rabit
+--| Version:  1.0
+--| Created: 2020-05-05
+--| Last Mod: 2020-05-05
+--| Requires: wdlSetRemovePropXMLdata(), wdlExecute()
+--|
+--| Summary: Set file properties.
+--|
+--| Format:  wdlSetFileProps(param1, param2, param3)
+--|
+--| Parameters: integer <pReqID>, array <pSetPropsA>, array <pRemovePropsA>
+--|
+--| Return: string
+----------------------------------------------------------------------*/
+
+function wdlSetFileProps pReqID pSetPropsA pRemovePropsA
+   local tPropsXML, tContType, tContLength, tResponse
+
+   # CHECK PROPERTIES TO SET OR REMOVE
+   if (pSetPropsA is empty and pSetPropsA is not an array) and (pRemovePropsA is empty and pRemovePropsA is not an array) then
+      answer error "Properties list empty!"
+      exit to top
+   end if
+
+   if pSetPropsA is not empty and pSetPropsA is not an array then
+      answer error "Set properties list is not an array!"
+      exit to top
+   end if
+
+   if pRemovePropsA is not empty and pRemovePropsA is not an array then
+      answer error "Remove properties list is not an array!"
+      exit to top
+   end if
+   #
+
+   put "PROPPATCH" into sWebDavPoolA[pReqID]["method"]
+   put "wdlSetFileProps" into sWebDavPoolA[pReqID]["requestHandler"]
+
+   # BUILD PROPERTY XML DATA
+   put wdlSetRemovePropXMLdata(pSetPropsA, pRemovePropsA) into tPropsXML
+
+   put tPropsXML into sWebDavPoolA[pReqID]["propertiesXML"]
+   put "application/xml; charset=" & quote & "utf-8" & quote into tContType
+   put tContType into sWebDavPoolA[pReqID]["contentType"]
+   put the number of chars of tPropsXML into tContLength
+   put tContLength into sWebDavPoolA[pReqID]["contentLength"]
+
+   # REQUEST
+   put wdlExecute(pReqID) into tResponse
+
+   return tResponse
+end wdlSetFileProps
+
+
+
+
+
+/*----------------------------------------------------------------------
+--| FUNCTION wdlGetCustomProps
+--|
+--| Author: rabit
+--| Version:  1.0
+--| Created: 2020-05-05
+--| Last Mod: 2020-05-05
+--| Requires: wdlPropertyNamesXMLdata(), wdlExecute()
+--|
+--| Summary: Get custom properties.
+--|
+--| Format:  wdlGetCustomProps(param1, param2)
+--|
+--| Parameters: integer <pReqID>, string <pProps> (comma delimited list)
+--|
+--| Return: string
+----------------------------------------------------------------------*/
+
+function wdlGetCustomProps pReqID pProps
+   local tFileProps, tPropsXML, tContType, tFilePropsA
+
+   put "PROPFIND" into sWebDavPoolA[pReqID]["method"]
+   put "wdlGetCustomProps" into sWebDavPoolA[pReqID]["requestHandler"]
+   put pProps into sWebDavPoolA[pReqID]["props"]
+
+   # BUILD PROPERTY XML DATA
+   put TRUE into tCustomProps
+   put wdlPropertyNamesXMLdata(pProps, tCustomProps) into tPropsXML
+
+   put tPropsXML into sWebDavPoolA[pReqID]["propertiesXML"]
+   put "application/xml; charset=" & quote & "utf-8" & quote into tContType
+   put tContType into sWebDavPoolA[pReqID]["contentType"]
+
+   # REQUEST
+   put wdlExecute(pReqID) into tFilePropsA
+
+   return tFilePropsA
+end wdlGetCustomProps
 
 
 

@@ -177,7 +177,9 @@ end XMLtoFileList
 
 
 command getProperties
-   local tFile, tNameSpace, tProps, tFilePropValues
+   local tFile, tNameSpace, tProps, tCallback
+   local tRequestDataA, tReqID, tFilePropValuesA
+   local tKey, tTheResult
 
    put fld "davDirFld" & fld "remoteFileFld" into tFile
 
@@ -202,25 +204,36 @@ command getProperties
    --   put empty into tNameSpace
    --   put "propname" into tProps
 
-   put getFileProps(tFile, tNameSpace, tProps) into tFilePropValues
+   prepareLogFields
 
-   --   put offset("<?xml", tFilePropValues) into tFilePropXMLStart
-   --   put char tFilePropXMLStart to -1 of tFilePropValues into tFilePropXML
-   --   put ConvertXMLToArray(tFilePropXML, , TRUE) into tFilePropValuesA
-   --   put tFilePropValuesA["multistatus"]["response"]["propstat"]["prop"]["getcontentlength"]["@value"]
-   --   -- put printArray("theArray", tFilePropValuesA)
+   put FALSE into tCallback
+   put commonSettings(tCallback) into tRequestDataA
 
+   put tFile into tRequestDataA["uri"]
+   # CUSTOM PROPERTIES
+   put tNameSpace into tRequestDataA["nameSpace"]
 
-   put "testTag,Author" into tProps
-   -- put "testTag" into tProps
-   -- put "creationdate,getcontentlength" into tProps
+   wdlSetupNewRequest tRequestDataA
+   put the result into tReqID
 
-   repeat for each item thisItem in tProps
-      put wdlPropertyVals(thisItem, tFilePropValues) after tTheResult
+   # REQUEST
+   put wdlGetCustomProps(tReqID, tProps) into tFilePropValuesA
+
+   wdlCleanup tReqID
+
+   repeat for each key tKey in tFilePropValuesA
+      put tKey & ":" && tFilePropValuesA[tKey] & return after tTheResult
    end repeat
 
-   delete char -1 of tTheResult
-   put tTheResult & return & return & tFilePropValues
+   if tTheResult is empty then
+      if the number of items of tProps is 1 then
+         put "Property not set."
+      else
+         put "Properties not set."
+      end if
+   else
+      put tTheResult -- & return & return & tFilePropValues
+   end if
 end getProperties
 
 
@@ -524,77 +537,52 @@ end createFolder
 ----------------------------------
 
 command setProperties
-   local tFile, tRemoveProps, tSetProps, tNameSpace
+   local tFile, tRemovePropsA, tNameSpace, tSetPropsA
 
    put fld "davDirFld" & fld "remoteFileFld" into tFile
 
-   -- put "Ralf Bitter,Xaver Bleed,Renglnadders Godhilf" into tSetProps["authors,Author"]
-   -- put "Ralf Bitter" into tSetProps["author"]
+   -- put "Ralf Bitter,Xaver Bleed,Renglnadders Godhilf" into tSetPropsA["authors,Author"]
+   -- put "Ralf Bitter" into tSetPropsA["author"]
 
    ----------
-   --   put "foo" into tSetProps[0]["testTag"]
-   --   put "Ralf Bitter" into tSetProps[0]["authors"]["Author"]
-   --   put "Xaver Bleed" into tSetProps[1]["authors"]["Author"]
-   --   put "Renglnadders Godhilf" into tSetProps[2]["authors"]["Author"]
+   --   put "foo" into tSetPropsA[0]["testTag"]
+   --   put "Ralf Bitter" into tSetPropsA[0]["authors"]["Author"]
+   --   put "Xaver Bleed" into tSetPropsA[1]["authors"]["Author"]
+   --   put "Renglnadders Godhilf" into tSetPropsA[2]["authors"]["Author"]
    -----------
 
    --------
-   put "foo" into tSetProps[0]["testTag"]
-   put "Ralf Bitter" into tSetProps[1]["Author"]
+   put "foo" into tSetPropsA[0]["testTag"]
+   put "Ralf Bitter" into tSetPropsA[1]["Author"]
    ---------
 
    put empty into tRemoveProps
 
    # USE tNameSpace FOR CUSTOM PROPERTIES ONLY!!!!!
-   -- put quote & the cNameSpace of this stack & quote into tNameSpace
    put quote & fld "namespaceFld" & quote into tNameSpace
 
-   setFileProps tFile, tSetProps, tRemoveProps, tNameSpace
+   setFileProps tFile, tSetPropsA, tRemovePropsA, tNameSpace
 end setProperties
 
 
 
 
-command setFileProps pFile, pSetProps, pRemoveProps, pNameSpace
+command setFileProps pFile, pSetPropsA, pRemovePropsA, pNameSpace
    local tPropsXML, tContType, tContLength, tRequestDataA, tReqID
-
-   ## CHECK PROPERTIES TO SET OR REMOVE
-   if (pSetProps is empty and pSetProps is not an array) and (pRemoveProps is empty and pRemoveProps is not an array) then
-      answer error "Properties list empty!"
-      exit to top
-   end if
-
-   if pSetProps is not empty and pSetProps is not an array then
-      answer error "Set properties list is not an array!"
-      exit to top
-   end if
-
-   if pRemoveProps is not empty and pRemoveProps is not an array then
-      answer error "Remove properties list is not an array!"
-      exit to top
-   end if
 
    prepareLogFields
 
    put FALSE into tCallback
    put commonSettings(tCallback) into tRequestDataA
 
-   put "PROPPATCH" into tRequestDataA["method"]
    put pFile into tRequestDataA["uri"]
-   ## BUILD PROPERTY XML DATA
-   put wdlSetRemovePropXMLdata(pSetProps, pRemoveProps) into tPropsXML
-   put tPropsXML into tRequestDataA["propertiesXML"]
-   put "application/xml; charset=" & quote & "utf-8" & quote into tContType
-   put tContType into tRequestDataA["contentType"]
-   put the number of chars of tPropsXML into tContLength
-   put tContLength into tRequestDataA["contentLength"]
    put pNameSpace into tRequestDataA["nameSpace"]
 
    wdlSetupNewRequest tRequestDataA
    put the result into tReqID
 
-   ## REQUEST
-   get wdlExecute(tReqID)
+   # REQUEST
+   get wdlSetFileProps(tReqID, pSetPropsA, pRemovePropsA)
    put it
 
    wdlCleanup tReqID
@@ -604,23 +592,18 @@ end setFileProps
 
 
 command removeProperties
-   local tFile, tRemoveProps, tSetProps
+   local tFile, tNameSpace, tRemovePropsA, tSetPropsA
 
    put fld "davDirFld" & fld "remoteFileFld" into tFile
 
-   -- put empty into tSetProps
-
-   -- put "authors" into tRemoveProps
-
-   -- put empty into tRemoveProps["authors"]
-   put empty into tRemoveProps["testTag"]
-   put empty into tRemoveProps["Author"]
+   -- put empty into tRemovePropsA["authors"]
+   put empty into tRemovePropsA["testTag"]
+   put empty into tRemovePropsA["Author"]
 
    # USE tNameSpace FOR CUSTOM PROPERTIES ONLY!!!!!
-   -- put quote & the cNameSpace of this stack & quote into tNameSpace
    put quote & fld "namespaceFld" & quote into tNameSpace
 
-   setFileProps tFile, tSetProps, tRemoveProps, tNameSpace
+   setFileProps tFile, tSetPropsA, tRemovePropsA, tNameSpace
 end removeProperties
 
 ----------------------------------
