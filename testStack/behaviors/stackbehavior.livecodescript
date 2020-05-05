@@ -713,23 +713,29 @@ end unlockFile
 ## METHOD: HEAD
 ----------------------------------
 
+command headerTest
+   put fld "davDirFld" & fld "remoteFileFld" into tFile
+
+   put getFileHeader(tFile, "Content-Length") into tResponse
+   put "Content-Length:" && tResponse
+end headerTest
+
+
 function getFileHeader pFile pHeader
-   local tRequestDataA, tReqID, tResponseData
+   local tCallback, tRequestDataA, tReqID, tResponseData
 
    prepareLogFields
 
    put FALSE into tCallback
    put commonSettings(tCallback) into tRequestDataA
 
-   put "HEAD" into tRequestDataA["method"]
    put pFile into tRequestDataA["uri"]
 
    wdlSetupNewRequest tRequestDataA
    put the result into tReqID
 
    ## REQUEST
-   get wdlExecute(tReqID)
-   put it into tResponseData
+   put wdlGetFileHeaders(tReqID) into tResponseData
 
    wdlCleanup tReqID
 

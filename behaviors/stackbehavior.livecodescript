@@ -673,6 +673,40 @@ end wdlUnlock
 
 
 
+/*----------------------------------------------------------------------
+--| FUNCTION wdlGetFileHeaders
+--|
+--| Author: rabit
+--| Version:  1.0
+--| Created: 2020-05-05
+--| Last Mod: 2020-05-05
+--| Requires: wdlExecute()
+--|
+--| Summary: Get all headers of a file.
+--|
+--| Format:  wdlGetFileHeaders(param)
+--|
+--| Parameters: integer <pReqID>
+--|
+--| Return: array
+----------------------------------------------------------------------*/
+
+function wdlGetFileHeaders pReqID
+   local tHeaderValuesA
+
+   put "HEAD" into sWebDavPoolA[pReqID]["method"]
+   put "wdlGetFileHeader" into sWebDavPoolA[pReqID]["requestHandler"]
+
+   # REQUEST
+   put wdlExecute(pReqID) into tHeaderValuesA
+
+   return tHeaderValuesA
+end wdlGetFileHeaders
+
+
+
+
+
 
 /*----------------------------------------------------------------------
 --| COMMAND wdlSetupNewRequest
