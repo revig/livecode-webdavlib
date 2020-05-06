@@ -448,16 +448,31 @@ end uploadFile
 ----------------------------------
 
 command deleteFile
-   local tFile
+   local tFile, tReqID, tServerResponse
 
    put fld "fileToDeleteFld" into tFile
-   put deleteFileFolder(tFile)
+   put deleteFileFolder(tFile, tReqID) into tServerResponse
+
+   if tServerResponse contains "Error" then
+     put cr & cr & tServerResponse after fld "errorFld"
+   else
+     # SUCCESS
+     if "204" is in line 1 of tServerResponse then
+       put "Request ID" && tReqID & ": deleted" & cr after fld "statusFld"
+     end if
+   end if -- if tServerResponse contains "Error"
+
+   wdlCleanup tReqID
+
+   put "Delete response:" && tServerResponse
 end deleteFile
 
 
 
 
-function deleteFileFolder pFileFolder
+function deleteFileFolder pFileFolder @pReqID
+   LOCAL tCallback, tRequestDataA, tReqID, tServerResponse
+
    libUrlSetStatusCallback
 
    if sKeepLogData <> TRUE then
@@ -474,7 +489,9 @@ function deleteFileFolder pFileFolder
 
    wdlSetupNewRequest tRequestDataA
    put the result into tReqID
+   put tReqID into pReqID
 
+   # REQUEST
    put wdlDeleteFileFolder(tReqID) into tServerResponse
 
    return tServerResponse
@@ -488,7 +505,7 @@ command deleteFolder
 
    put fld "davDirFld" & "testFolder/" into tFolder
 
-   put deleteFileFolder(tFolder) into tServerResponse
+   put deleteFileFolder(tFolder, tReqID) into tServerResponse
 
    if tServerResponse contains "Error" then
       put cr & cr & tServerResponse after fld "errorFld"
@@ -846,156 +863,6 @@ command urlCallback pUrl, pStatus
       end if
    end if
 end urlCallback
-
-
-
-
-
-function getSetRemovePropXMLdata pSetProps, pRemoveProps
-   local thisLine,tNextProp,tPrevProp,tPropCount
-   local tPropsXML,tRemovePropsXML,tSetPropsXML
-
-   -- BUILD SET PROPERTY XML DATA
-   if pSetProps is an array then
-
-      put "-" into tKeyDelim
-      put "=" into tValueDelim
-
-      put arrayToKeyValueList(pSetProps, tKeyDelim, tValueDelim) into tProps
-
-      ## SORT PROPS LINES
-      set the itemdelimiter to tKeyDelim
-      sort tProps by item 1 of each
-
-      ## BUILD XML
-      put "<D:set>" & return & "<D:prop>" & return into tSetPropsXML
-
-      ## GET VALUES FROM PROPSLIST
-      set the itemdelimiter to tKeyDelim
-      put the number of lines of tProps into tPropsLineNums
-      put 1 into tCurrentLine
-      repeat for each line tPropsLine in tProps
-         if item 1 of tPropsLine is a number then
-            delete item 1 of tPropsLine
-
-            ## GET VALUE
-            set the itemdelimiter to tValueDelim
-            put last item of tPropsLine into tValue
-
-            ## GET NODE NAMES
-            put tPropsLine into tNodes
-            delete last item of tNodes
-
-            ## BUILD XML
-            set the itemdelimiter to tKeyDelim
-            if tNodes <> tPrevNodes then
-               ## WRITE OPENING TAGS
-               repeat for each item tNode in tNodes
-                  put "<Z:" & tNode & ">" & return after tSetPropsXML
-                  if tNode is last item of tNodes then
-                     ## WRITE FIRST VALUE AFTER LAST OPENING TAG
-                     delete char -1 of tSetPropsXML
-                     put tValue & "</Z:" & tNode & ">" & return after tSetPropsXML
-                  end if
-               end repeat
-               put tNodes into tPrevNodes
-            else
-               ## WRITE VALUES
-               put last item of tPrevNodes into tNode
-               put "<Z:" & tNode & ">" & tValue & "</Z:" & tNode & ">" & return after tSetPropsXML
-            end if -- IF tNodes <> tPrevNodes then
-
-            ## CHECK IF NODES IN NEXT LINE ARE EQUAL
-            if tCurrentLine < tPropsLineNums then
-               ## GET NODES OF NEXT LINE
-               put line (tCurrentLine + 1) of tProps into tNextNodes
-               set the itemdelimiter to tValueDelim
-               delete last item of tNextNodes -- REMOVE VALUE
-               set the itemdelimiter to tKeyDelim
-               delete item 1 of tNextNodes -- REMOVE NUMBER
-
-               ## COMPARE NODES IN CURRENT AND NEXT LINE
-               if tNextNodes <> tPrevNodes then
-                  ## WRITE CLOSING TAGS
-                  repeat with i = (the number of items of tPrevNodes -1) down to 1
-                     put "</Z:" & item i of  tPrevNodes & ">" & return after tSetPropsXML
-                  end repeat
-                  put empty into tPrevNodes
-               end if
-
-            else -- IF TCURRENTLINE < TPROPSLINENUMS THEN
-               ## WRITE CLOSING TAGS
-               repeat with i = (the number of items of tPrevNodes -1) down to 1
-                  put "</Z:" & item i of  tPrevNodes & ">" & return after tSetPropsXML
-               end repeat
-            end if -- IF TCURRENTLINE < TPROPSLINENUMS THEN
-
-            else -- IF ITEM 1 OF TPROPSLINE IS A NUMBER THEN
-               set the itemdelimiter to tValueDelim
-               put item 1 of tPropsLine into tNode
-               put last item of tPropsLine into tValue
-               put "<Z:" & tNode & ">" & tValue & "</Z:" & tNode & ">" & return after tSetPropsXML
-            end if -- IF ITEM 1 OF TPROPSLINE IS A NUMBER THEN
-
-            add 1 to tCurrentLine
-         end repeat
-
-         put "</D:prop>" & return & "</D:set>" after tSetPropsXML
-
-      end if -- IF PSETPROPS IS NOT EMPTY THEN
-
-      ##
-      ## BUILD REMOVE PROPERTY XML DATA
-      if pRemoveProps is an array then
-
-         put "-" into tKeyDelim
-         put "=" into tValueDelim
-
-         put arrayToKeyValueList(pRemoveProps, tKeyDelim, tValueDelim) into tRemoveProps
-
-         put "<D:remove>" & return & "<D:prop>" & return into tRemovePropsXML
-
-         repeat for each line tPropLine in tRemoveProps
-            delete last char of tPropLine -- "="
-
-            set the itemdelimiter to tKeyDelim
-
-            if the number of items of tPropLine > 1 then
-               repeat for each item thisItem in tPropLine
-                  if thisItem is last item of tPropLine then
-                     ## WRITE OPENING TAG AND CLOSING TAG IN ONE LINE
-                     put "<Z:" & thisItem & "></Z:" & thisItem & ">" into tLastTag
-                  else
-                     ## WRITE OPENING TAGS
-                     put "<Z:" & thisItem & ">" & cr after tOpeningTags
-                     put cr & "</Z:" & thisItem & ">" before tClosingTags
-                  end if
-               end repeat
-               ## BUILD XML
-               put tOpeningTags & tLastTag & tClosingTags & cr after tRemovePropsXML
-            else
-               put "<Z:" & tPropLine & "></Z:" & tPropLine & ">" & return after tRemovePropsXML
-            end if
-
-         end repeat
-
-         put "</D:prop>" & return & "</D:remove>" after tRemovePropsXML
-      end if -- IF PREMOVEPROPS IS AN ARRAY THEN
-
-      ## ADD SET PROPS XML
-      if tSetPropsXML is not empty then
-         put  tSetPropsXML into tPropsXML
-         if tRemovePropsXML is not empty then
-            put tPropsXML & return & tRemovePropsXML into tPropsXML
-         end if
-      else
-         if tRemovePropsXML is not empty then
-            put tRemovePropsXML into tPropsXML
-         end if
-      end if
-      return tPropsXML
-   end getSetRemovePropXMLdata
-
 
 
 
