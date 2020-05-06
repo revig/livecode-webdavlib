@@ -448,16 +448,31 @@ end uploadFile
 ----------------------------------
 
 command deleteFile
-   local tFile
+   local tFile, tReqID, tServerResponse
 
    put fld "fileToDeleteFld" into tFile
-   put deleteFileFolder(tFile)
+   put deleteFileFolder(tFile, tReqID) into tServerResponse
+
+   if tServerResponse contains "Error" then
+     put cr & cr & tServerResponse after fld "errorFld"
+   else
+     # SUCCESS
+     if "204" is in line 1 of tServerResponse then
+       put "Request ID" && tReqID & ": deleted" & cr after fld "statusFld"
+     end if
+   end if -- if tServerResponse contains "Error"
+
+   wdlCleanup tReqID
+
+   put "Delete response:" && tServerResponse
 end deleteFile
 
 
 
 
-function deleteFileFolder pFileFolder
+function deleteFileFolder pFileFolder @pReqID
+   LOCAL tCallback, tRequestDataA, tReqID, tServerResponse
+
    libUrlSetStatusCallback
 
    if sKeepLogData <> TRUE then
@@ -474,7 +489,9 @@ function deleteFileFolder pFileFolder
 
    wdlSetupNewRequest tRequestDataA
    put the result into tReqID
+   put tReqID into pReqID
 
+   # REQUEST
    put wdlDeleteFileFolder(tReqID) into tServerResponse
 
    return tServerResponse
@@ -488,7 +505,7 @@ command deleteFolder
 
    put fld "davDirFld" & "testFolder/" into tFolder
 
-   put deleteFileFolder(tFolder) into tServerResponse
+   put deleteFileFolder(tFolder, tReqID) into tServerResponse
 
    if tServerResponse contains "Error" then
       put cr & cr & tServerResponse after fld "errorFld"
