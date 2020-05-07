@@ -122,5 +122,5 @@ See button "requestBtn" in the enclosed sample stack.
 
 ### Meta
 
--   Version: 1.1.1
+-   Version: 1.1.2
 -   Author:  [Ralf Bitter](mailto:rabit@revigniter.com)
