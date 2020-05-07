@@ -351,7 +351,7 @@ end downloadFile
 ----------------------------------
 
 command checkWritePermission
-   local tFile, tURI, tCallBack, tCallbackTarget, tContType, tDataToUpload
+   local tFile, tURI, tCallBack, tCallbackTarget
    local tRequestDataA, tReqID, tServerResponse, tDeleteResult
 
    prepareLogFields
@@ -602,7 +602,7 @@ end setProperties
 
 
 command setFileProps pFile, pSetPropsA, pRemovePropsA, pNameSpace
-   local tPropsXML, tContType, tContLength, tRequestDataA, tReqID
+   local tPropsXML, tContLength, tRequestDataA, tReqID
 
    prepareLogFields
 

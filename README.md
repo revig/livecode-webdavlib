@@ -82,15 +82,8 @@ These are the request data array keys used depending on the particular request m
 -   password (user password or app password)
 -   authType (Basic or Digest)
 -   sslFlag (a boolean, TRUE for a secure connection)
--   method (see the WebDav methods above)
 -   agent (User-agent)
--   propertiesXML (the properties XML data inserted into a XML request body)
--   contentType (Content-type like application/xml; charset="utf-8")
--   contentLength
--   dataToUpload (the binary file data to upload)
 -   nameSpace (WebDAV XML namespace like "http://www.w3.com/standards/z39.50/")
--   lockScope (exclusive or shared)
--   lockType (write)
 -   lockOwner (any name)
 -   lockToken (the cCurrentLockToken of stack "WebDavLib")
 -   callBack (the name of a callback handler used by methods GET and PUT)
@@ -129,5 +122,5 @@ See button "requestBtn" in the enclosed sample stack.
 
 ### Meta
 
--   Version: 1.1.1
+-   Version: 1.1.2
 -   Author:  [Ralf Bitter](mailto:rabit@revigniter.com)
