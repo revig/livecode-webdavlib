@@ -128,6 +128,10 @@ function XMLtoFileList pXMLdata pProp
    put lineOffset("</D:multistatus>", pXMLdata) into tEndLineNum
    put line tStartLineNum to tEndLineNum of pXMLdata into tFilesListXML
 
+   # REMOVE LINEFEED CHARACTERS WHICH MAY BE CONTAINED
+   # AT ANY PLACE OF THE XML DATA
+   replace return with "" in tFilesListXML
+
    put convertXMLToArray(tFilesListXML, , ) into tFilesListA
    -- put printArray("theArray", tFilesListA)
 
