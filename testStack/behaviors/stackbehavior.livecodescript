@@ -128,6 +128,10 @@ function XMLtoFileList pXMLdata pProp
    put lineOffset("</D:multistatus>", pXMLdata) into tEndLineNum
    put line tStartLineNum to tEndLineNum of pXMLdata into tFilesListXML
 
+   # REMOVE LINEFEED CHARACTERS WHICH MAY BE CONTAINED
+   # AT ANY PLACE OF THE XML DATA
+   replace return with "" in tFilesListXML
+
    put convertXMLToArray(tFilesListXML, , ) into tFilesListA
    -- put printArray("theArray", tFilesListA)
 
@@ -379,7 +383,7 @@ command checkWritePermission
       # CHECKING WRITE PERMISSIONS, SO KEEP LOG DATA OF PUT METHOD
       put TRUE into sKeepLogData
 
-      put deleteFileFolder(tURI) into tDeleteResult
+      put deleteFileFolder(tURI, tReqID) into tDeleteResult
    end if
    put "can write result:" && line 1 of tServerResponse & "," && "delete result:" && tDeleteResult
 end checkWritePermission
