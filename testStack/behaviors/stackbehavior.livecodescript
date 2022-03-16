@@ -379,7 +379,7 @@ command checkWritePermission
       # CHECKING WRITE PERMISSIONS, SO KEEP LOG DATA OF PUT METHOD
       put TRUE into sKeepLogData
 
-      put deleteFileFolder(tURI) into tDeleteResult
+      put deleteFileFolder(tURI, tReqID) into tDeleteResult
    end if
    put "can write result:" && line 1 of tServerResponse & "," && "delete result:" && tDeleteResult
 end checkWritePermission
