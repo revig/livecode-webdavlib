@@ -1,4 +1,4 @@
-﻿script "WebDavLibStackBehavior"
+script "WebDavLibStackBehavior"
 
 
 --==================================================================--
@@ -8,7 +8,7 @@
 -- WebDAV communication library
 --
 -- @author rabit@revigniter.com
--- @version 1.1.2
+-- @version 1.1.3
 -- @license: MIT
 --
 --==================================================================--
